@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Editor swap files
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Node (por si alguien corre npx skills localmente aquí)
+node_modules/
