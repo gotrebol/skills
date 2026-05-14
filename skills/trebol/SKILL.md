@@ -1,6 +1,6 @@
 ---
 name: trebol
-description: Integración con la API de Trébol para automatizar procesos de back office (KYB, KYC y más). Cubre endpoints, autenticación, items, account-flows, widget, webhooks y errores.
+description: Integración con la API de Trébol para automatizar procesos de back office (KYB y más). Cubre endpoints, autenticación, items, account-flows, widget, webhooks y errores.
 last_updated: 2026-05-13
 ---
 
@@ -24,7 +24,7 @@ Si la pregunta es sobre cambios al **producto** de Trébol en general (no al ski
 
 **Si algo en este skill contradice `reference/openapi.yaml`, confía en el OpenAPI, no en este archivo.** Este skill es contenido curado que se actualiza con cada release, pero puede quedar desfasado del OpenAPI si alguien tocó la spec sin sincronizar. `reference/openapi.yaml` se copia desde el OpenAPI oficial de Trébol (`api-reference/openapi.yaml`) en cada release. Para detalles de schemas, fields, status codes o paths: ve directo al YAML.
 
-Trébol es una plataforma para automatizar procesos de back office. Hoy el core son verificaciones KYB/KYC en LatAm; la API está diseñada para soportar más casos de uso en el futuro. Los clientes integran vía dos caminos:
+Trébol es una plataforma para automatizar procesos de back office. Hoy el core son verificaciones KYB en LatAm; la API está diseñada para soportar más casos de uso en el futuro. Los clientes integran vía dos caminos:
 
 1. **API directa** — Subir documentos por URL o carga directa, recibir resultados por webhook
 2. **Widget embebido** — Componente web que los usuarios finales usan para subir docs dentro de la app del cliente
@@ -79,7 +79,7 @@ Lee según la pregunta del usuario:
    - `PUT /account-flows/{id_slug}` y `GET /account-flows/{id_slug}`: enum `["mx", "co"]`.
    - `POST /account-flows` (schema `AccountFlowCreate`): **no incluye** el field `country`.
    - `GET /account-flows` (lista): no declara `country` en cada elemento.
-   - **Para KYB/KYC en EEUU**: manda `"country": "not_specified"` literal. Las docs oficiales en `guia-devs/uso-kyb/eeuu/overview.mdx` lo muestran así.
+   - **Para KYB en EEUU**: manda `"country": "not_specified"` literal. Las docs oficiales en `guia-devs/uso-kyb/eeuu/overview.mdx` lo muestran así.
 6. **Webhooks**: el cliente DEBE responder `2xx` rápido y procesar en background. Reintentos hasta 5 veces con backoff exponencial.
 7. **URLs de documentos**: `file_url` debe estar accesible al menos 5 minutos. Trébol descarga el archivo, no lo reusa.
 8. **Idempotencia**: los webhooks pueden duplicarse. Usa la firma `v1=` del header `Trebol-Signature` como clave de deduplicación — es única por evento. Detalle en `flows/webhooks.md` y en la guía oficial `guia-devs/webhooks.mdx`.

@@ -23,7 +23,7 @@ Los **fields del body y response** sí son consistentes: `snake_case` (`verifica
 
 | Método | Path | Para qué |
 |---|---|---|
-| `POST` | `/verifications` | **Crear verificación** (KYB, KYC, etc.). Devuelve `id` (no `verification_id`) y status `201` |
+| `POST` | `/verifications` | **Crear verificación** (KYB, hipotecas, nómina, etc.). Devuelve `id` (no `verification_id`) y status `201` |
 | `GET` | `/verifications` | Listar verificaciones de la cuenta |
 | `GET` | `/verifications/{verification-id}` | Detalles de una verificación específica |
 | `GET` | `/v2/verifications/{verification-id}/{entity}` | Sección específica de la verificación. `entity` ∈ `[details, shareholders, people, documents, sources]` |
