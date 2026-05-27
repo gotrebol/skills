@@ -620,6 +620,8 @@ paths:
 
         **Fuentes (`sources`) y extracciones automáticas:** cuando la cuenta tiene una extracción automática activa para el tipo de ítem correspondiente, cada elemento en `data.sources` puede incluir `custom_user_prompts`: un objeto cuyas claves son el identificador editable de la extracción automática (`prompt_id`) y cuyos valores son el JSON extraído según el esquema de la versión en uso. Más detalle en la guía [Extracciones automáticas](/producto/guias/extracciones-automaticas).
 
+        **Coordenadas de citas:** cuando `entity=people`, agrega `?with_citations=true` y obtendrás en `data.citations.url` una URL firmada al artifact de coordenadas. Detalle completo en [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+
         <Accordion title="Endpoints v1 (Legacy)">
           <Warning>
             Estos endpoints están en modo legacy. Te recomendamos migrar al endpoint v2 que consolida toda esta funcionalidad en un solo endpoint con mejor estructura de datos.
@@ -646,6 +648,14 @@ paths:
           schema:
             type: string
             enum: [details, shareholders, people, documents, sources]
+        - name: with_citations
+          in: query
+          required: false
+          description: |
+            Solo aplica cuando `entity=people`. Si es `true`, la respuesta incluye `data.citations.url`: una URL firmada por CloudFront que apunta a un JSON con las coordenadas (`bounding_boxes`) de cada field extraído. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: Sección recuperada exitosamente.
@@ -700,6 +710,8 @@ paths:
 
         **Fuentes (`sources`) y extracciones automáticas:** cuando la cuenta tiene una extracción automática activo para el tipo de ítem correspondiente, cada elemento en `data.sources` puede incluir `custom_user_prompts`: un objeto cuyas claves son el identificador editable de la extracción automática (`prompt_id`) y cuyos valores son el JSON extraído según el esquema de la versión en uso. Más detalle en la guía [Extracciones automáticas](/producto/guias/extracciones-automaticas).
 
+        **Coordenadas de citas:** cuando `section=people`, agrega `?with_citations=true` y obtendrás en `data.citations.url` una URL firmada al artifact de coordenadas. Detalle completo en [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+
         <Accordion title="Endpoints v1 (Legacy)">
           <Warning>
             Estos endpoints están en modo legacy. Te recomendamos migrar al endpoint v2 que consolida toda esta funcionalidad en un solo endpoint con mejor estructura de datos.
@@ -726,6 +738,14 @@ paths:
           schema:
             type: string
             enum: [details, shareholders, people, documents, sources]
+        - name: with_citations
+          in: query
+          required: false
+          description: |
+            Solo aplica cuando `section=people`. Si es `true`, la respuesta incluye `data.citations.url`: una URL firmada por CloudFront que apunta a un JSON con las coordenadas (`bounding_boxes`) de cada field extraído. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: Sección recuperada exitosamente.
@@ -3249,6 +3269,7 @@ components:
                 curp:
                   search_number: "ROMC850315HDFRRS07"
                   success: true
+                  message: null
                   applicant_data:
                     curp: "ROMC850315HDFRRS07"
                     names: "CARLOS ALBERTO"
@@ -3264,6 +3285,7 @@ components:
                     registry_date: "1985"
                     register_entity: "09 DISTRITO FEDERAL"
                     register_municipality: "014 BENITO JUAREZ"
+                  curp_file: "https://files.sandbox.gotrebol.com/mx/curps/ROMC850315HDFRRS07_file.pdf?response-content-type=application%2Fpdf&response-content-disposition=inline&Expires=1762987062&Key-Pair-Id=EXAMPLE&Signature=ExampleSignature"
               people_id: 5234
               ai_suggested: false
               human_reviewed: true
@@ -3334,6 +3356,7 @@ components:
                 curp:
                   search_number: "ROMC850315HDFRRS07"
                   success: true
+                  message: null
                   applicant_data:
                     curp: "ROMC850315HDFRRS07"
                     names: "CARLOS ALBERTO"
@@ -3349,6 +3372,7 @@ components:
                     registry_date: "1985"
                     register_entity: "09 DISTRITO FEDERAL"
                     register_municipality: "014 BENITO JUAREZ"
+                  curp_file: "https://files.sandbox.gotrebol.com/mx/curps/ROMC850315HDFRRS07_file.pdf?response-content-type=application%2Fpdf&response-content-disposition=inline&Expires=1762987062&Key-Pair-Id=EXAMPLE&Signature=ExampleSignature"
               people_id: 5234
               ai_suggested: false
               human_reviewed: true
@@ -3815,7 +3839,14 @@ components:
             $ref: "#/components/schemas/PublicCurpEvidentiaryDocumentData",
             nullable: true,
           }
-        curp_file: { type: string, nullable: true }
+        curp_file:
+          type: string
+          nullable: true
+          description: >
+            URL firmada al PDF descargado de RENAPO con la constancia del
+            CURP. La URL incluye un parámetro `Expires=…` y caduca; cuando
+            expire, vuelve a consultar el endpoint para obtener una URL
+            renovada.
 
     PublicExternalIdentities:
       type: object
@@ -3843,6 +3874,19 @@ components:
         full_list:
           type: array
           items: { $ref: "#/components/schemas/V2FullPeopleItem" }
+        citations:
+          type: object
+          description: |
+            Presente solo cuando se llamó con `?with_citations=true`. Contiene la URL firmada (CloudFront) al artifact de coordenadas en S3, que mapea cada field extraído a sus `bounding_boxes` dentro del PDF original. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+          properties:
+            url:
+              type: string
+              format: uri
+              description: |
+                URL firmada y temporal. Descarga el JSON cuanto antes; si caduca, vuelve a llamar al endpoint con el flag para obtener una nueva. Si el artifact aún no se horneó para esta verificación, no se devuelve la llave citations.
+              example: "https://files.gotrebol.com/{verification_id}/citations/people.json?Expires=…&Signature=…"
+          required:
+            - url
 
     V2Shareholder:
       type: object
@@ -5220,6 +5264,14 @@ components:
                       Para más información sobre los esquemas de formulario, consulta la sección [Personalizar Widget](/guia-devs/personalizar-widget#1-configurando-la-experiencia-flow_items).
                       **Aplicara solo para items de tipo `ubos` y es opcional**.
                     example: "mx_form"
+                  ubos_schema_id:
+                    type: string
+                    description:
+                      ID de un esquema de formulario personalizado creado con el endpoint de esquemas de formularios.
+                      Cuando se especifica, el widget usa este esquema en lugar de los predeterminados (`mx_form` / `co_form`).
+                      El esquema debe existir en la cuenta. Debe ser diferente a `mx_form` o `co_form`(Estos se especifican con `ubos_form_schema`).
+                      **Aplicará solo para items de tipo `ubos` y es opcional**.
+                    example: "ubos-custom-001"
                   schema_id:
                     type: string
                     description: |
@@ -5590,6 +5642,8 @@ components:
               "password",
               "text",
               "table",
+              "checkbox",
+              "country",
             ]
           description: |
             Tipo de campo que determina cómo se renderiza en la interfaz:
@@ -5605,6 +5659,8 @@ components:
             - **table**: Tabla para solicitar un número indeterminado de datos de cualquier tipo de campo **Excepto para el tipo de campo `file`**. Requiere ui_columns.
             - **paragraph**: Label o texto que no tiene ningún input asociado, usado a nivel informativo. Requiere solamente ui_label.
             - **heading**: Encabezado que no tiene ningún input asociado, usado a nivel informativo. Requiere solamente ui_label.
+            - **checkbox**: Campo booleano (true/false) renderizado como checkbox con label. Útil para preguntas de sí/no.
+            - **country**: Selector de país con búsqueda. Almacena el nombre del país en la llave del campo y genera automáticamente una llave adicional con sufijo `_code` que contiene el código ISO 3166-1 alpha-2 (ej. si la llave es `nationality`, se almacena `nationality: "México"` y `nationality_code: "MX"`).
           example: "text"
         ui_label:
           type: string
@@ -5621,11 +5677,25 @@ components:
         ui_items:
           type: array
           items:
-            type: string
+            oneOf:
+              - type: string
+              - type: object
+                properties:
+                  label:
+                    type: string
+                    description: Texto visible para el usuario.
+                  value:
+                    type: string
+                    description: Valor almacenado internamente.
+                required:
+                  - label
+                  - value
           description: |
-            Array de opciones disponibles para campos de tipo select, multiselect. 
-            Solo es necesario para estos tipos de campo. Cada string representa una opción 
-            que el usuario puede seleccionar.
+            Array de opciones disponibles para campos de tipo select y multiselect.
+            Soporta dos formatos:
+            - **Strings**: el valor almacenado es igual al texto visible (ej. `["Opción A", "Opción B"]`).
+            - **Objetos `{ label, value }`**: muestra `label` al usuario y almacena `value` (ej. `[{ "label": "Persona", "value": "person" }]`).
+            Si se usa el formato de objetos con `depends_on_value`, los valores deben coincidir con `value`, no con `label`.
           example: ["opcion1", "opcion2", "opcion3"]
         ui_columns:
           type: object

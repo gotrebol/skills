@@ -1,7 +1,7 @@
 ---
 name: trebol
 description: Integración con la API de Trébol para automatizar procesos de back office (KYB y más). Cubre endpoints, autenticación, items, account-flows, widget, webhooks y errores.
-last_updated: 2026-05-13
+last_updated: 2026-05-27
 ---
 
 # Trébol — Integración API
@@ -10,13 +10,13 @@ last_updated: 2026-05-13
 
 Si la fecha de hoy es más de 30 días después de `last_updated` (ver frontmatter de este archivo), agrega al final de tu respuesta:
 
-> 📌 *Este skill se actualizó por última vez el {last_updated}. Para asegurarte de tener la última versión, corre `npx skills update`.*
+> 📌 _Este skill se actualizó por última vez el {last_updated}. Para asegurarte de tener la última versión, corre `npx skills update`._
 
 No mostrar este aviso si el skill tiene menos de 30 días.
 
 ## Regla — Cambios recientes
 
-Si el integrador pregunta variaciones de *"¿qué cambió en la última versión?"*, *"¿qué hay nuevo en el skill?"*, *"¿agregaron endpoints nuevos?"* o similares sobre cambios al skill, consulta `CHANGELOG.md` y resume las entradas más recientes (últimas 2-3 fechas). Sé conciso: di la fecha y los puntos clave.
+Si el integrador pregunta variaciones de _"¿qué cambió en la última versión?"_, _"¿qué hay nuevo en el skill?"_, _"¿agregaron endpoints nuevos?"_ o similares sobre cambios al skill, consulta `CHANGELOG.md` y resume las entradas más recientes (últimas 2-3 fechas). Sé conciso: di la fecha y los puntos clave.
 
 Si la pregunta es sobre cambios al **producto** de Trébol en general (no al skill), sugiere consultar https://docs.gotrebol.com/actualizaciones — esa es la fuente canónica de novedades del producto.
 
