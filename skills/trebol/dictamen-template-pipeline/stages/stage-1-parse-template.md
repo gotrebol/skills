@@ -21,8 +21,8 @@ Si el input no es procesable, no lo arregla — detiene el pipeline y pide clari
 ## Skills de referencia obligatorios
 
 Antes de escribir código, lee según el tipo:
-- `.docx` → `/mnt/skills/public/docx/SKILL.md` (extraer texto, tablas, y si hace falta desempacar el XML).
-- PDF → `/mnt/skills/public/pdf/SKILL.md` y `/mnt/skills/public/pdf-reading/SKILL.md` (inspeccionar campos de formulario AcroForm).
+- `.docx` → `/mnt/skills/public/docx/SKILL.md` si está disponible en el entorno (Claude.ai); si no, usa `python-docx` directamente para extraer texto y tablas, o desempaca el ZIP del `.docx` para inspeccionar el XML.
+- PDF → `/mnt/skills/public/pdf/SKILL.md` y `/mnt/skills/public/pdf-reading/SKILL.md` si están disponibles; si no, usa `pdfplumber` o `pypdf` para inspeccionar campos de formulario AcroForm (`reader.get_fields()`).
 
 ## Proceso
 

@@ -11,7 +11,7 @@ Este skill coordina el pipeline end-to-end para **configurar plantillas de dicta
 
 El cliente entrega una plantilla de dictamen **en blanco** (un `.docx` o un PDF editable) con su propio diseño, encabezados, tablas y etiquetas. "Configurar" significa:
 
-> Devolver **el mismo archivo, en el mismo formato**, con las **variables de Trébol** (ej. `{legal_businessName}`, `{tax_businessTaxId}`, `{#shareholders}{name}{/}`) colocadas en los lugares correctos, de modo que cuando Trébol corra ese archivo contra una verificación a través del endpoint de exportación, lo autollene con los datos extraídos.
+> Devolver **el mismo archivo, en el mismo formato**, con las **variables de Trébol** (ej. `{legal_businessName}`, `{tax_businessTaxId}`, `{#shareholders}{name}{/}`) colocadas en los lugares correctos, de modo que cuando Trébol corra ese archivo contra una verificación a través del endpoint de exportación (`GET /v2/verifications/{verification-id}/export/{doc-template-id}`, ver `reference/openapi.yaml`), lo autollene con los datos extraídos.
 
 No se redacta contenido nuevo, no se reescribe el dictamen, no se cambia el diseño. Solo se **mapean los campos del cliente a variables de Trébol** y se **insertan los tokens** preservando el formato exacto.
 

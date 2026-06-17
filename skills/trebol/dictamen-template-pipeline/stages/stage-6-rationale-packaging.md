@@ -33,7 +33,14 @@ Solo las decisiones que importan: ambigüedades resueltas, gotchas aplicados (nu
 Lista los tokens marcados como "verificar contra una verificación real" (ej. `delegate`, variantes no documentadas, separador Colombia). Estos son candidatos a `corrections.md` una vez confirmados, y deben probarse exportando una verificación de prueba antes de dar la plantilla por cerrada.
 
 ### Paso 4 — Cómo probar (recordatorio operativo)
-Breve nota para el usuario: subir la plantilla en Ajustes → "Plantillas de formatos", correr el endpoint de exportación contra una verificación finalizada de prueba, y revisar que los IDs se reemplacen. Si algún ID queda literal, revisar llaves/espacios/numeración (ver `grounding/sintaxis-plantillas.md` sección 7).
+Breve nota para el usuario: subir la plantilla en Ajustes → "Plantillas de formatos", luego correr el endpoint de exportación contra una verificación finalizada de prueba:
+
+```
+GET /v2/verifications/{verification-id}/export/{doc-template-id}
+Header: x-api-key: treb_sk_live_...
+```
+
+(Ver spec completa en `reference/openapi.yaml`.) Revisar que los IDs se reemplacen en el documento resultante. Si algún ID queda literal, revisar llaves/espacios/numeración (ver `grounding/sintaxis-plantillas.md` sección 7).
 
 ### Paso 5 — Formato del documento de trazabilidad
 Markdown por defecto (rápido y editable). Si el usuario pide Word, genera un `.docx` Trébol-branded (este documento es interno, no es la plantilla del cliente, así que aquí **sí** aplican los brand guidelines de `trebol-brand-guidelines`). El documento de trazabilidad debe llevar visible "DOCUMENTO INTERNO — TRAZABILIDAD DE CONFIGURACIÓN".

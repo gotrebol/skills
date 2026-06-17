@@ -148,6 +148,20 @@ En la referencia el bucle usa además: `{fixed_value}`, `{fixed_shares}`, `{vari
 ### Individual `shareholder_0_*`
 `_name`, `_type` (física/moral), `_nationality`, `_id_type`, `_id_number`, `_currency`, `_fixed_shares`, `_fixed_value`, `_variable_shares`, `_variable_value`, `_total_shares`, `_total_value`, `_share_percentage`
 
+### Accionista persona física `shareholder_person_0_*` — **0-based**
+
+Familia para accionistas que son personas físicas (vs. morales). Confirmada en payload real (`dictionary-example.json`). Convive con `shareholder_0_*` — la plataforma genera ambas; en plantillas usa la que corresponda al dato.
+
+Campos de dato: `_name`, `_names`, `_firstSurname`, `_secondSurname`, `_id_type`, `_id_number`, `_id_number_rfc`, `_nationality`, `_type`, `_gender`, `_birthDate`, `_birthDate_day/_month/_year`, `_birthEntity`, `_is_person`, `_is_woman_x_mark`
+
+Shareholding: `_fixed_shares`, `_fixed_value`, `_variable_shares`, `_variable_value`, `_total_shares`, `_total_value`, `_share_percentage`, `_currency`
+
+Domicilio MX desagregado (sub-llaves en español): `_mx_address_tipo_vialidad`, `_mx_address_nombre_vialidad`, `_mx_address_numero_exterior`, `_mx_address_tipo_asentamiento`, `_mx_address_nombre_asentamiento`, `_mx_address_codigo_postal`, `_mx_address_municipio_o_ente_territorial`, `_mx_address_entidad_federativa`
+
+Identidad externa: `_externalIdentities_curp_applicantData_curp`, `_names`, `_firstSurname`, `_secondSurname`, `_gender`, `_birthDate`, `_birthEntity`, `_nationality`
+
+AML: `_aml_validation_status`, `_aml_risk_category`
+
 ### Totales de capital
 `{capital_fixedValue}`, `{capital_fixedShares}`, `{capital_variableValue}`, `{capital_variableShares}`, `{capital_totalValue}`, `{capital_totalShares}`
 
