@@ -41,7 +41,7 @@ Esto confirma con datos reales varias familias que en `variable-catalog.md` esta
 ## Lo que este payload confirma (verificado contra dato real)
 
 - **Numeración 0-based** confirmada para `shareholder_0`/`shareholder_1`, `executive_0`, `renapo_0`/`1`/`2`, `auditor_0`. Consistente con la regla del catálogo (accionistas/órganos 0-based).
-- **`tax_additionalData`** se escribe **con la "i"** (`additionalData`), confirmado por las claves reales `tax_additionalData`, `tax_additionalData_source_itemId`. La grafía `tax_additonalData` que aparece en la plantilla de referencia es una **errata** y no debe replicarse. (Esto se reflejó en `corrections/`.)
+- **`tax_additionalData`** se escribe **con la "i"** (`additionalData`), confirmado por las claves reales `tax_additionalData`, `tax_additionalData_source_itemId`. La grafía `tax_additonalData` que aparece en la plantilla de referencia es una **errata** y no debe replicarse. (Esto se reflejó en `corrections.md`.)
 - **Sin claves con guion medio** en este payload (todo `_`). No resuelve la duda de Colombia (este payload es de México), pero confirma que la familia mexicana usa `_` de forma consistente.
 
 ## Direcciones (comercial vs fiscal) — esquema completo

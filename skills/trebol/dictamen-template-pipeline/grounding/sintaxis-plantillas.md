@@ -61,7 +61,7 @@ Variables que renderizan `"X"` cuando una condición es verdadera, para checkbox
 
 | Capacidad | Word (.docx) | PDF editable |
 |---|---|---|
-| Variable simple `{var}` | Sí, como texto inline | Sí, como **nombre del campo de texto** |
+| Variable simple `{var}` | Sí, como texto inline | Sí, como **valor del campo de texto** (nombre del campo es arbitrario) |
 | Bucles `{#}{/}` | Sí | **No** |
 | Inversos `{^}{/}` | Sí | **No** (se resuelve dejando el campo vacío) |
 | `x_mark` | Sí | Sí (campo de texto que recibirá "X") |
@@ -70,8 +70,9 @@ Variables que renderizan `"X"` cuando una condición es verdadera, para checkbox
 **PDF — reglas de Adobe Acrobat (doc /plantillas/configuracion):**
 - Usar siempre **campos de texto** (no checkbox/radio).
 - **Un campo nuevo por variable.** Nunca copiar/pegar el mismo campo (campos con el mismo nombre rompen la exportación).
-- El **nombre del campo** ES la variable, con llaves: el nombre del campo de formulario debe ser `{legal_businessName}` (incluyendo las llaves, según la práctica de Trébol de pegar la variable del diccionario en el campo).
-- Recomendado: copiar el ID exacto del diccionario y pegarlo, para evitar erratas.
+- **Convención A (confirmada en producción, la más común):** escribe el token `{variable}` como **valor / texto por defecto** del campo; el nombre del campo es arbitrario y se deja como está.
+- **Convención B:** algunos PDFs nombran el campo como `{legal_businessName}`. Si la plantilla ya viene así, respétala.
+- Replicar siempre la convención que ya trae la plantilla del cliente; ver `grounding/example-client-mapping.md` para un ejemplo real de Convención A.
 
 ## 7. Errores comunes (de la doc /plantillas/gestion "Solución de problemas")
 

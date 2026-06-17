@@ -83,4 +83,4 @@ FUENTE: `{#board_member_0_names}Escritura pública número {board_member_0_sourc
 4. **Poder `delegate`** en apoderados, no listado en la doc web de 5 poderes.
 5. **Typo** `tax_additonalData_source_qrValidatedAt` (debería ser `additionalData`).
 
-Estas son justamente las cosas que el **ingeniero de variables** (persona) debe vigilar y que se registran en `corrections/` cuando se confirme cuál es la forma correcta contra una verificación real.
+Estas son justamente las cosas que el **ingeniero de variables** (persona) debe vigilar y que se registran en `corrections.md` cuando se confirme cuál es la forma correcta contra una verificación real.

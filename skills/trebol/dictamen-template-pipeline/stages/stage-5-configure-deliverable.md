@@ -32,7 +32,7 @@ Pasa al helper: ruta del original, mapeo de inserción, y banderas (Word: qué f
 - **Formato intacto:** ninguna fuente, color, ancho de columna, encabezado o estilo del cliente cambió. Solo se agregaron tokens.
 - **Tokens válidos:** cada token insertado existe en el grounding y está bien escrito (sin espacios dentro de llaves, sin mayúsculas accidentales, llaves balanceadas).
 - **Word:** bucles `{#}{/}` e inversos `{^}{/}` solo donde corresponde; las variables dentro de un bucle son relativas.
-- **PDF:** cada variable es el nombre de un campo de texto **único**; no hay dos campos con el mismo nombre; no se usaron bucles.
+- **PDF:** cada token está insertado como valor de un campo de texto **único** (o como nombre del campo si la plantilla usa Convención B); no hay tokens duplicados en dos campos distintos; no se usaron bucles.
 - **Cobertura:** todo campo `FINAL` tiene su token insertado; todo `SIN_VARIABLE` quedó como se decidió. Nada quedó a medias.
 
 Si una validación falla, intenta corregir una vez; si persiste, reporta a Stage 6 con `formatting_issues`.

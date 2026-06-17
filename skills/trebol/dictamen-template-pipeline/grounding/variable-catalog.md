@@ -1,6 +1,6 @@
 # Catálogo de Variables de Trébol (grounding)
 
-Diccionario destilado de todas las variables (IDs) que Trébol reemplaza automáticamente al exportar una verificación contra una plantilla. Fuente: documentación viva en `https://www.gotrebol.com/docs/plantillas/` + la plantilla de referencia (`example-template-reference.md`). Ante conflicto con `corrections/`, prevalece `corrections`.
+Diccionario destilado de todas las variables (IDs) que Trébol reemplaza automáticamente al exportar una verificación contra una plantilla. Fuente: documentación viva en `https://www.gotrebol.com/docs/plantillas/` + la plantilla de referencia (`example-template-reference.md`). Ante conflicto con `corrections.md`, prevalece `corrections.md`.
 
 > **Ground truth de grafía y forma:** para confirmar **cómo se escribe exactamente** una variable y **qué forma tiene el dato** (escalar / lista-bucle / objeto), consulta el payload real `dictionary-example.json` (ver `dictionary-example.md`). Ese JSON gana sobre este catálogo y sobre la referencia en cuanto a grafía, salvo que `corrections` diga otra cosa. Este catálogo sigue siendo útil para las familias que **no** aparecen en ese payload (ej. apoderados/consejo, si la verificación de ejemplo no los tenía).
 
@@ -112,7 +112,7 @@ Fiscal: `{key_person_1_fiscalAddress}` (+ `_source_date`, `_day`, `_month`, `_ye
 Domicilio MX desagregado (usado en la referencia): `{key_person_1_mx_address_tipo_vialidad}`, `_nombre_vialidad`, `_numero_exterior`, `_tipo_interior`, `_numero_interior`, `_nombre_asentamiento`, `_municipio_o_ente_territorial`, `_codigo_postal`, `_entidad_federativa`, `_localidad`, `_pais`
 
 ### Facultades (poderes) — 6 tipos. Patrón por tipo `<P>`:
-Tipos: `administration` (administración), `assets_management` (dominio), `loans` (títulos y operaciones de crédito), `bank_accounts` (cuentas bancarias), `lawsuits_and_collections` (pleitos y cobranzas), `delegate` (otorgar/delegar/sustituir poderes — **confirmado real** por el template Actinver; ver `example-actinver-mapping.md`).
+Tipos: `administration` (administración), `assets_management` (dominio), `loans` (títulos y operaciones de crédito), `bank_accounts` (cuentas bancarias), `lawsuits_and_collections` (pleitos y cobranzas), `delegate` (otorgar/delegar/sustituir poderes — **confirmado real** contra template real de cliente; ver `example-client-mapping.md`).
 
 Mapeo etiqueta-de-cliente → tipo (no siempre literal):
 | Etiqueta típica en la plantilla | `<P>` |

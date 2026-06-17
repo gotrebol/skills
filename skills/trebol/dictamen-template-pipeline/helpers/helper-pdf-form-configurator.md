@@ -1,6 +1,6 @@
 ---
 name: helper-pdf-form-configurator
-description: Helper del pipeline de configuración de plantillas de dictamen para configurar plantillas en PDF editable (PDF con campos de formulario / AcroForm) de clientes de Trébol. La regla central del PDF es que cada variable de Trébol se configura como el NOMBRE de un campo de formulario (ej. un campo de texto llamado exactamente {legal_businessName}), un campo único por variable, sin duplicados, y sin bucles ni inversos (esos solo funcionan en Word). Las listas (apoderados, accionistas) se configuran como campos indexados por instancia fija (key_person_1, key_person_2, ... según la numeración correcta). Úsalo cuando Stage 5 lo invoque para producir el entregable en PDF. NO decide qué variable va dónde (viene cerrado de Stage 3/4) — recibe un mapeo de inserción ya resuelto y nombra/crea los campos de formulario preservando el diseño visual del PDF del cliente.
+description: Helper del pipeline de configuración de plantillas de dictamen para configurar plantillas en PDF editable (PDF con campos de formulario / AcroForm) de clientes de Trébol. La convención confirmada en producción (Convención A) es que el token {variable} va como VALOR del campo de formulario y el nombre del campo es arbitrario; si la plantilla ya usa nombre=variable (Convención B), se respeta. Un token por campo, sin duplicados, sin bucles ni inversos (esos solo funcionan en Word). Las listas se expanden como instancias fijas indexadas. Úsalo cuando Stage 5 lo invoque para producir el entregable en PDF. NO decide qué variable va dónde (viene cerrado de Stage 3/4) — recibe un mapeo de inserción ya resuelto y configura los campos preservando el diseño visual del PDF del cliente.
 ---
 
 # Helper — Configurador de Plantillas PDF (formulario / AcroForm)
@@ -13,7 +13,7 @@ Configuras la plantilla PDF editable del cliente nombrando sus **campos de formu
 
 En PDF **no hay motor de plantillas con bucles**. El reemplazo se hace campo por campo de formulario. Hay **dos convenciones** y debes **replicar la que ya trae la plantilla del cliente**:
 
-- **Convención A — token en el VALOR del campo (confirmada en producción, la más común):** el token `{variable}` se escribe como **valor / texto por defecto** del campo de formulario; el **nombre del campo es arbitrario** (`Texto100`, etc.) y se deja como está. Es la que usa el template real de Actinver (ver `grounding/example-actinver-mapping.md`). Si el cliente entrega un PDF con campos sin tokens, usa esta: pon el token como valor de cada campo.
+- **Convención A — token en el VALOR del campo (confirmada en producción, la más común):** el token `{variable}` se escribe como **valor / texto por defecto** del campo de formulario; el **nombre del campo es arbitrario** (`Texto100`, etc.) y se deja como está. Ejemplo real documentado en `grounding/example-client-mapping.md`. Si el cliente entrega un PDF con campos sin tokens, usa esta: pon el token como valor de cada campo.
 - **Convención B — nombre del campo = la variable:** algunos PDFs nombran el campo exactamente como `{legal_businessName}`. Si la plantilla ya viene así, respétala.
 
 Reglas comunes a ambas convenciones:

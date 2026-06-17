@@ -30,7 +30,7 @@ Incluye TODOS los campos, también los `SIN_VARIABLE` (con "—" en variable y l
 Solo las decisiones que importan: ambigüedades resueltas, gotchas aplicados (numeración, delegate, separador Colombia), campos sin variable y por qué, y cualquier precedente que marcó el CPO. No narres todo el pipeline.
 
 ### Paso 3 — Pendientes de verificación
-Lista los tokens marcados como "verificar contra una verificación real" (ej. `delegate`, variantes no documentadas, separador Colombia). Estos son candidatos a `corrections/` una vez confirmados, y deben probarse exportando una verificación de prueba antes de dar la plantilla por cerrada.
+Lista los tokens marcados como "verificar contra una verificación real" (ej. `delegate`, variantes no documentadas, separador Colombia). Estos son candidatos a `corrections.md` una vez confirmados, y deben probarse exportando una verificación de prueba antes de dar la plantilla por cerrada.
 
 ### Paso 4 — Cómo probar (recordatorio operativo)
 Breve nota para el usuario: subir la plantilla en Ajustes → "Plantillas de formatos", correr el endpoint de exportación contra una verificación finalizada de prueba, y revisar que los IDs se reemplacen. Si algún ID queda literal, revisar llaves/espacios/numeración (ver `grounding/sintaxis-plantillas.md` sección 7).

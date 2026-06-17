@@ -53,21 +53,21 @@ Estos NO son correcciones activas todavía — son puntos dudosos detectados al 
 **Campo / variable tipo:** facultades/poderes de apoderado; familia `key_person_N_power_delegate_*`.
 **Error conocido:** se dudaba si `delegate` existía (la doc web solo listaba 5 poderes).
 **Correcto:** `delegate` es un poder real (otorgar/delegar/sustituir poderes), con sub-campos `_x_mark`, `_signature_type`, `_duration`, `_limits_description`. La etiqueta de cliente "PODER OTORGAR/DELEGAR/SUSTITUIR PODERES" mapea a `delegate`. La lista completa de poderes es 6: administration, assets_management, loans, bank_accounts, lawsuits_and_collections, delegate.
-**Fuente:** template real Actinver "Solicitud de Dictamen Persona Moral" (ver `grounding/example-actinver-mapping.md`).
+**Fuente:** template real de cliente (PDF AcroForm, ver `grounding/example-client-mapping.md`).
 **Fecha:** 2026-06-11
 
 ## Corrección: en PDF el token va en el VALOR del campo (no en el nombre)
 **Campo / variable tipo:** configuración de plantillas en PDF de formulario (AcroForm).
 **Error conocido:** el helper de PDF asumía que "el nombre del campo = la variable". En una plantilla real configurada por Trébol los nombres de campo son arbitrarios (`Texto100`, etc.) y el token `{variable}` está puesto como **valor / texto por defecto** del campo.
 **Correcto:** al configurar PDF, escribe el token `{variable}` como **valor del campo de formulario**; deja el nombre del campo como venga. Replica la convención de la plantilla del cliente. Un token único por campo; sin duplicados; sin bucles. (Si una plantilla del cliente sí usa nombre=variable, respétala; pero la convención confirmada en producción es token-en-valor.)
-**Fuente:** template real Actinver (PDF AcroForm ~1.092 campos); ver `grounding/example-actinver-mapping.md`.
+**Fuente:** template real de cliente (PDF AcroForm ~1.092 campos); ver `grounding/example-client-mapping.md`.
 **Fecha:** 2026-06-11
 
 ## Corrección: grafía de `tax_additionalData`
 **Campo / variable tipo:** datos fiscales adicionales; cualquier variable de la familia `tax_additionalData*`.
 **Error conocido:** la plantilla de referencia (`example-template-reference.md`) escribe la variable como `tax_additonalData` (sin la "i": addi**t**onal), una errata. Replicarla produce un token que no se reemplaza.
 **Correcto:** `tax_additionalData` (con la "i": addi**ti**onal). Confirmado contra el payload real `dictionary-example.json`, que trae las claves reales `tax_additionalData`, `tax_additionalData_source_itemId`, `tax_additionalData_source_itemType`.
-**Fuente:** payload real `grounding/dictionary-example.json` (verificación de TRABASOLO NORTE).
+**Fuente:** payload real `grounding/dictionary-example.json` (verificación real de cliente).
 **Fecha:** 2026-06-04
 
 ---
