@@ -1,4 +1,4 @@
----
+﻿---
 name: dictamen-template-pipeline
 description: Orquesta el pipeline completo para CONFIGURAR plantillas de dictamen de clientes de Trébol — es decir, tomar la plantilla en blanco que envía un cliente (Word .docx o PDF editable) y devolverla idéntica en formato pero con las variables/IDs de Trébol (ej. {legal_businessName}, {#shareholders}...{/}) insertadas en los lugares correctos, para que la plataforma de Trébol pueda autollenarla. Úsalo siempre que el usuario suba o mencione una plantilla de dictamen, un "formato de dictamen", un "formato de opinión legal", una plantilla de cliente que hay que "configurar", "parametrizar", "mapear variables", "ponerle los IDs", o pregunte "¿cómo configuro esta plantilla?" adjuntando un Word o PDF. Dispara también si menciona "plantillas de formatos", "exportación de verificaciones", "diccionario de variables", o pide acelerar la configuración de plantillas. NO es para responder cuestionarios de seguridad (eso es el security-questionnaire-pipeline).
 ---
@@ -11,7 +11,7 @@ Este skill coordina el pipeline end-to-end para **configurar plantillas de dicta
 
 El cliente entrega una plantilla de dictamen **en blanco** (un `.docx` o un PDF editable) con su propio diseño, encabezados, tablas y etiquetas. "Configurar" significa:
 
-> Devolver **el mismo archivo, en el mismo formato**, con las **variables de Trébol** (ej. `{legal_businessName}`, `{tax_businessTaxId}`, `{#shareholders}{name}{/}`) colocadas en los lugares correctos, de modo que cuando Trébol corra ese archivo contra una verificación a través del endpoint de exportación (`GET /v2/verifications/{verification-id}/export/{doc-template-id}`, ver `../reference/openapi.yaml`), lo autollene con los datos extraídos.
+> Devolver **el mismo archivo, en el mismo formato**, con las **variables de Trébol** (ej. `{legal_businessName}`, `{tax_businessTaxId}`, `{#shareholders}{name}{/}`) colocadas en los lugares correctos, de modo que cuando Trébol corra ese archivo contra una verificación a través del endpoint de exportación (`GET` o `POST /v2/verifications/{verification-id}/export/{doc-template-id}`, ver `../reference/openapi.yaml`), devuelva un `download_url` del documento ya relleno con los datos extraídos.
 
 No se redacta contenido nuevo, no se reescribe el dictamen, no se cambia el diseño. Solo se **mapean los campos del cliente a variables de Trébol** y se **insertan los tokens** preservando el formato exacto.
 
@@ -81,7 +81,7 @@ Mapeo mental con el pipeline de cuestionarios que el equipo ya conoce: 1≈Intak
    - `grounding/sintaxis-plantillas.md` — sintaxis del motor de plantillas (variables, bucles `{#}{/}`, inversos `{^}{/}`, numeración, x_mark, fuentes) y las diferencias Word vs PDF.
    - `grounding/example-template-reference.md` — la plantilla de dictamen de referencia de Trébol, ya tokenizada, anotada sección por sección. Es la fuente de verdad de **cómo se ve una plantilla bien configurada** y la única que documenta variables que no están en la web (ej. `ubos_business_0_*`, `external_sources_*`, `tax_additionalData_*`). Tiene erratas conocidas (ver `corrections.md`).
    - `grounding/example-client-mapping.md` — **ejemplo trabajado de una plantilla de cliente real ya configurada** (PDF de formulario). Documenta cómo se mapea un PDF real: el token va en el **valor** del campo (no en el nombre), el mapeo de etiquetas de poderes (incl. `delegate` confirmado y `dominio→assets_management`), las dos variantes de domicilio, los flags del comprobante (`address_service_type_*`), y los slots fijos de apoderados/consejo/UBOs. Léelo cuando configures PDFs o cuando dudes cómo se llena un campo.
-   - La documentación viva está en `https://www.gotrebol.com/docs/plantillas/` (intro, empresa, apoderados, accionistas, administracion, vigilancia, colombia, configuracion, gestion). Si necesitas confirmar una variable que no esté en el catálogo local, consúltala ahí.
+   - La documentación viva está en `https://docs.gotrebol.com/plantillas/` (intro, empresa, apoderados, accionistas, administracion, vigilancia, colombia, configuracion, gestion). Si necesitas confirmar una variable que no esté en el catálogo local, consúltala ahí.
    - **Precedencia:** ante conflicto sobre cómo se escribe una variable, `corrections` > `dictionary-example.json` (dato real) > `example-template-reference.md` > `variable-catalog.md` > doc web.
 
 3. **Carga el skill de correcciones conocidas.** Lee `corrections.md` en silencio.

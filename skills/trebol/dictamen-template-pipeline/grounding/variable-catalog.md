@@ -1,6 +1,6 @@
-# Catálogo de Variables de Trébol (grounding)
+﻿# Catálogo de Variables de Trébol (grounding)
 
-Diccionario destilado de todas las variables (IDs) que Trébol reemplaza automáticamente al exportar una verificación contra una plantilla. Fuente: documentación viva en `https://www.gotrebol.com/docs/plantillas/` + la plantilla de referencia (`example-template-reference.md`). Ante conflicto con `corrections.md`, prevalece `corrections.md`.
+Diccionario destilado de todas las variables (IDs) que Trébol reemplaza automáticamente al exportar una verificación contra una plantilla. Fuente: documentación viva en `https://docs.gotrebol.com/plantillas/` + la plantilla de referencia (`example-template-reference.md`). Ante conflicto con `corrections.md`, prevalece `corrections.md`.
 
 > **Ground truth de grafía y forma:** para confirmar **cómo se escribe exactamente** una variable y **qué forma tiene el dato** (escalar / lista-bucle / objeto), consulta el payload real `dictionary-example.json` (ver `dictionary-example.md`). Ese JSON gana sobre este catálogo y sobre la referencia en cuanto a grafía, salvo que `corrections` diga otra cosa. Este catálogo sigue siendo útil para las familias que **no** aparecen en ese payload (ej. apoderados/consejo, si la verificación de ejemplo no los tenía).
 
@@ -97,6 +97,8 @@ Cada domicilio de la empresa viene en **dos formas que conviven**: una **línea 
 ---
 
 ## 2. Apoderados / Representantes legales  (doc: /plantillas/apoderados) — **1-based** `key_person_N`
+
+> **Exportar con apoderados:** las variables `key_person_N` solo se llenan si se usa el **POST** del endpoint de exportación con el cuerpo `key_people`. El GET simple puede dejarlas en blanco. Ver Stage 6 Paso 4c para el request completo. `person_id` y `role_id` se obtienen de `GET /v2/verifications/{verification-id}/people` → array `key_people`.
 
 ### Identidad
 `{key_person_1}` (nombre), `{key_person_1_tax_id}`, `{key_person_1_role_name}`, `{key_person_1_id}`

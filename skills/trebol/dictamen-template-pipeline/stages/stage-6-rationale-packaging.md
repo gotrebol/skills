@@ -33,14 +33,37 @@ Solo las decisiones que importan: ambigüedades resueltas, gotchas aplicados (nu
 Lista los tokens marcados como "verificar contra una verificación real" (ej. `delegate`, variantes no documentadas, separador Colombia). Estos son candidatos a `corrections.md` una vez confirmados, y deben probarse exportando una verificación de prueba antes de dar la plantilla por cerrada.
 
 ### Paso 4 — Cómo probar (recordatorio operativo)
-Breve nota para el usuario: subir la plantilla en Ajustes → "Plantillas de formatos", luego correr el endpoint de exportación contra una verificación finalizada de prueba:
 
+**Paso 4a — Subir la plantilla al dashboard.**
+Ve a Ajustes → "Plantillas de formatos" en la app de Trébol y sube el archivo configurado. El dashboard te mostrará el `doc-template-id` asignado a esa plantilla (ID visible en la tabla de plantillas). No hay endpoint de API para subir/listar plantillas — es exclusivamente vía dashboard.
+
+**Paso 4b — Exportar (plantilla sin apoderados o con GET simple).**
 ```
 GET /v2/verifications/{verification-id}/export/{doc-template-id}
-Header: x-api-key: treb_sk_live_...
+x-api-key: treb_sk_live_...
 ```
+La respuesta NO es el documento — es un JSON:
+```json
+{ "success": true, "message": "File generated successfully. Download URL provided.",
+  "download_url": "https://...", "expires_in": 3600000, "size": 1000000 }
+```
+Descarga el archivo desde `download_url` (válida 1 hora, no requiere auth adicional). Ábrelo y verifica que los tokens se reemplazaron. Si algún token quedó literal, revisar llaves/espacios/numeración (ver `grounding/sintaxis-plantillas.md` sección 7).
 
-(Ver spec completa en `../reference/openapi.yaml`.) Revisar que los IDs se reemplacen en el documento resultante. Si algún ID queda literal, revisar llaves/espacios/numeración (ver `grounding/sintaxis-plantillas.md` sección 7).
+**Paso 4c — Exportar con apoderados (`key_person_N`).**
+Si la plantilla usa variables de apoderado (`{key_person_1_name}`, etc.), el GET simple puede no llenarlas. Usa el POST con el mapeo explícito:
+```
+POST /v2/verifications/{verification-id}/export/{doc-template-id}
+x-api-key: treb_sk_live_...
+Content-Type: application/json
+
+{
+  "key_people": [
+    { "key": "key_person_1", "person_id": <id_del_apoderado>, "role_id": "<id_del_rol>" },
+    { "key": "key_person_2", "person_id": <id>, "role_id": "<id>" }
+  ]
+}
+```
+Obtén `person_id` y `role_id` del endpoint `GET /v2/verifications/{verification-id}/people` → array `key_people`: `person_id` = campo `people_id`; `role_id` = campo `id` dentro de `roles`. La respuesta es el mismo JSON con `download_url`. Ver spec en `../../reference/openapi.yaml`.
 
 ### Paso 5 — Formato del documento de trazabilidad
 Markdown por defecto (rápido y editable). Si el usuario pide Word, genera un `.docx` Trébol-branded (este documento es interno, no es la plantilla del cliente, así que aquí **sí** aplican los brand guidelines de `trebol-brand-guidelines`). El documento de trazabilidad debe llevar visible "DOCUMENTO INTERNO — TRAZABILIDAD DE CONFIGURACIÓN".

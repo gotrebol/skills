@@ -1,7 +1,7 @@
 ---
 name: trebol
 description: Integración con la API de Trébol para automatizar procesos de back office (KYB y más). Cubre endpoints, autenticación, items, account-flows, widget, webhooks y errores.
-last_updated: 2026-05-27
+last_updated: 2026-06-17
 ---
 
 # Trébol — Integración API
