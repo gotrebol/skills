@@ -81,6 +81,32 @@ El token hereda el formato del lugar donde va (si la celda era Arial 10 negro, e
 - **Celda combinada donde el token desbordaría el formato:** inserta respetando la combinación; si no es posible sin romper diseño, reporta el campo.
 - **Mapeo que llega ambiguo:** no improvises — devuelve a Stage 5 indicando qué campo no estaba resuelto.
 
+## Gotcha de plataforma: PowerShell en Windows omite `[Content_Types].xml`
+
+**Aplica cuando:** el entorno de ejecución es Windows y se usa PowerShell para empaquetar el `.docx` final.
+
+**Síntoma:** el archivo se crea con el tamaño esperado pero Word lo abre como fondo gris (documento en blanco o dañado). No hay error visible durante el empaquetado.
+
+**Causa:** PowerShell interpreta los corchetes `[` `]` como wildcards en rutas de archivo. Esto afecta a `[Content_Types].xml`, que es obligatorio en todo `.docx`. Los cmdlets `Compress-Archive` y `Copy-Item` lo omiten silenciosamente — incluso `[System.IO.File]::Exists()` devuelve `False` para ese path si se le pasa directamente desde PowerShell.
+
+**Solución confirmada:** usar `[System.IO.Directory]::GetFiles($dir, "*", [System.IO.SearchOption]::AllDirectories)` para listar archivos (la API .NET no expande wildcards), y `[System.IO.File]::Open($path, ...)` con el path literal que devuelve `GetFiles` para leer cada uno. Nunca usar `Compress-Archive`, `Copy-Item`, ni `Get-ChildItem` para operar sobre `[Content_Types].xml` en Windows.
+
+```powershell
+# Patrón correcto para empaquetar un .docx en Windows/PowerShell
+Add-Type -Assembly System.IO.Compression
+$zipStream = [System.IO.File]::Create($outputPath)
+$zip = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create)
+$allFiles = [System.IO.Directory]::GetFiles($workDir, "*", [System.IO.SearchOption]::AllDirectories)
+foreach ($f in $allFiles) {
+    $entryName = $f.Substring($workDir.Length + 1).Replace('\', '/')
+    $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::Optimal)
+    $es = $entry.Open()
+    $fs = [System.IO.File]::Open($f, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read)
+    $fs.CopyTo($es); $fs.Close(); $es.Close()
+}
+$zip.Dispose(); $zipStream.Close()
+```
+
 ## Checklist
 - [ ] Leí `/mnt/skills/public/docx/SKILL.md`.
 - [ ] Trabajé sobre copia, no sobre el upload.
@@ -90,3 +116,4 @@ El token hereda el formato del lugar donde va (si la celda era Arial 10 negro, e
 - [ ] Formato del cliente intacto; sin brand guidelines de Trébol.
 - [ ] SIN_VARIABLE tratado como se decidió (texto fijo / blanco).
 - [ ] Output estructurado a Stage 5 con issues reportados.
+- [ ] Si el entorno es Windows/PowerShell: usé `Directory.GetFiles` para empaquetar (nunca `Compress-Archive`).

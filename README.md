@@ -11,6 +11,7 @@ npx skills add gotrebol/skills
 ## Skills disponibles
 
 - [`skills/trebol`](./skills/trebol/) — Integración con la API de Trébol (autenticación, endpoints, flujos KYB, hipotecas, nómina, webhooks, widget).
+- [`skills/dictamen-template-pipeline`](./skills/dictamen-template-pipeline/) — Pipeline para configurar plantillas de dictamen jurídico de clientes (Word .docx y PDF editable), insertando las variables de Trébol en los lugares correctos para que la plataforma las autollene al exportar.
 
 ## Documentación
 
