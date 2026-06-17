@@ -85,6 +85,15 @@ Lee según la pregunta del usuario:
 8. **Idempotencia**: los webhooks pueden duplicarse. Usa la firma `v1=` del header `Trebol-Signature` como clave de deduplicación — es única por evento. Detalle en `flows/webhooks.md` y en la guía oficial `guia-devs/webhooks.mdx`.
 9. **Sandbox**: la API solo documenta el prefijo `treb_sk_live_`. Si el usuario pregunta por sandbox, dile que confirme con Trébol antes de inventar prefijos.
 
+## Plantillas de dictamen (pipeline de configuración)
+
+Cuando el usuario quiera configurar una plantilla de dictamen jurídico de clientes — tomar un Word (.docx) o PDF en blanco y devolverlo con las variables de Trébol insertadas para que la plataforma las autollene al exportar — lee `dictamen-template-pipeline/SKILL.md` y sigue ese pipeline.
+
+Dispara cuando el usuario:
+- Suba un Word o PDF de dictamen y pida configurarlo, parametrizarlo o ponerle variables
+- Mencione "plantilla de dictamen", "formato de dictamen", "configurar plantilla", "mapear variables", "plantilla de cliente"
+- Pregunte cómo funcionan las variables en los documentos que exporta Trébol
+
 ## Documentación oficial
 
 - Web: https://docs.gotrebol.com
