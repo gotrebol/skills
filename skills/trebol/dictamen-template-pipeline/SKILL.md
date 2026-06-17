@@ -30,13 +30,15 @@ Si hay duda razonable sobre si aplica, dispáralo — Stage 1 determinará si el
 
 **No dispares** para cuestionarios de seguridad de la información de bancos: eso es `security-questionnaire-pipeline`, otro pipeline.
 
-## Arquitectura (una sola skill, módulos como archivos de referencia)
+## Arquitectura (sub-pipeline dentro del skill de Trébol)
 
-Esto es **una skill** con **un único `SKILL.md`** (este archivo, el orquestador). Todo lo demás son **archivos de referencia `.md`** que este orquestador **lee y sigue** cuando llega a cada paso — no son skills separadas que se instalen aparte. Así el `.zip` cumple la regla de Claude.ai de "exactamente un `SKILL.md`".
+Este pipeline vive dentro de `skills/trebol/` y es invocado desde el `SKILL.md` padre (`../SKILL.md`). El asistente llega aquí porque el skill de Trébol lo referencia en su sección "Plantillas de dictamen" — no se instala por separado. Todo lo demás en esta carpeta son **archivos de referencia `.md`** que este orquestador **lee y sigue** cuando llega a cada paso; no son skills independientes.
 
 ```
-dictamen-template-pipeline/
-├── SKILL.md                    ← ÚNICO SKILL.md — este orquestador
+skills/trebol/
+├── SKILL.md                    ← entrada del skill de Trébol (padre, instalado por npx skills add)
+└── dictamen-template-pipeline/
+    ├── SKILL.md                ← este orquestador (sub-pipeline, referenciado desde el padre)
 ├── corrections.md              ← correcciones conocidas (máxima prioridad)
 ├── stages/                     ← 6 etapas del proceso (un .md por etapa)
 │   ├── stage-1-parse-template.md
@@ -52,10 +54,10 @@ dictamen-template-pipeline/
 ├── helpers/                    ← configuradores de Word y de PDF
 │   ├── helper-docx-template-filler.md
 │   └── helper-pdf-form-configurator.md
-└── grounding/                  ← diccionario de variables + sintaxis + plantilla de referencia + payload real
+    └── grounding/              ← diccionario de variables + sintaxis + plantilla de referencia + payload real
 ```
 
-> **Cómo opera el orquestador:** cuando un paso dice "lee y aplica `stages/stage-1-parse-template.md`", abre ese archivo del bundle de la skill con la herramienta de lectura y sigue sus instrucciones como si fueran una sección de este mismo documento. Las "personas" se adoptan leyendo su `.md` y razonando desde esa perspectiva. No se invoca ninguna skill externa (salvo las públicas de `docx`/`pdf` que los helpers usan para manipular archivos).
+> **Cómo opera el orquestador:** cuando un paso dice "lee y aplica `stages/stage-1-parse-template.md`", abre ese archivo con la herramienta de lectura y sigue sus instrucciones como si fueran una sección de este mismo documento. Las "personas" se adoptan leyendo su `.md` y razonando desde esa perspectiva. No se invoca ninguna skill externa (salvo las públicas de `docx`/`pdf` que los helpers referencian como fallback).
 
 ## Flujo end-to-end
 

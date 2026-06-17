@@ -5,7 +5,7 @@ description: Correcciones conocidas al pipeline de configuración de plantillas 
 
 # Correcciones Conocidas — Pipeline de Configuración de Plantillas de Dictamen
 
-Este archivo tiene **máxima prioridad** sobre cualquier otro documento de grounding. Ante conflicto entre una entrada aquí y `grounding/variable-catalog.md`, `grounding/sintaxis-plantillas.md`, `grounding/example-template-reference.md`, o la documentación viva en `gotrebol.com/docs/plantillas/`, **prevalece este archivo**.
+Este archivo tiene **máxima prioridad** sobre cualquier otro documento de grounding. Ante conflicto entre una entrada aquí y `grounding/variable-catalog.md`, `grounding/sintaxis-plantillas.md`, `grounding/example-template-reference.md`, o la documentación viva en `https://docs.gotrebol.com/plantillas/`, **prevalece este archivo**.
 
 Su razón de ser: la documentación y la plantilla de referencia tienen erratas y huecos. Cuando una variable o sintaxis se confirma (o se descarta) **contra una verificación real en la plataforma**, la verdad operativa vive aquí, no en la doc.
 

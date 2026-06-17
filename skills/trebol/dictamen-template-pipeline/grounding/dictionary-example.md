@@ -79,6 +79,6 @@ python3 -c "import json; d=json.load(open('grounding/dictionary-example.json'));
 2. **`dictionary-example.json`** (este archivo) — ground truth de nombres y formas para las familias presentes.
 3. `example-template-reference.md` — cómo se ve una plantilla bien tokenizada (pero tiene erratas conocidas).
 4. `variable-catalog.md` — explicación destilada y catálogo curado (incluye familias ausentes en el JSON).
-5. Documentación viva en `gotrebol.com/docs/plantillas/` — referencia general.
+5. Documentación viva en `https://docs.gotrebol.com/plantillas/` — referencia general.
 
 Ante conflicto entre el JSON y el catálogo/referencia sobre **cómo se escribe** una variable presente en el JSON, **gana el JSON** (es dato real), salvo que `corrections` diga otra cosa.
