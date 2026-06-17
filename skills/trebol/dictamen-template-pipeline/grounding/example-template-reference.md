@@ -71,7 +71,7 @@ FUENTE: `{#board_member_0_names}Escritura pública número {board_member_0_sourc
 - **E.FIRMA Y SELLO DIGITAL**: FECHA `{fiel_scrapedAt}` ESTADO `{fiel_status}` · `{#external_sources_fiel_sello}{#scrapper_success}{company_name} {business_type} {rfc} {type} {serial_number} {status} {start_date} {final_date}{/}{/}` · error `{#external_sources}{^scrapper_success}RFC: {rfc} Estado: {scrapper_error}{/}{/}` · `{^external_sources_fiel_sello}No hay certificados de FIEL y SELLO activos{/}`
 - **SIGER**: `{#external_sources_siger}FUENTE: {consult_source} FECHA: {consult_date} ESTADO: {consult_status} Razón social: {company_name} FME: {fme} Estatus FME: {fme_status} Entidad: {federal_entity} Municipio: {municipality} Oficina: {registry_office} {#documents}{preCodedForm} {admissionDate} {registrationDate} {documentNumber}{/documents}{/}`
 - **INE**: `{#external_sources_ine_validation}FUENTE: {consult_source} FECHA: {consult_date} ESTADO: {consult_status} {is_valid} {cic} {voter_code} {emission_number} {federal_district} {local_district} {ocr_number} {registry_year} {emission_year}{/}`
-- **QR DE LA CSF**: FECHA `{tax_additonalData_source_qrValidatedAt}` (⚠ typo "additonal") ESTADO `{#tax_additionalData_source_qrValidation}EXITOSO{/}{^tax_additionalData_source_qrValidation}NO EXITOSO{/}` RESULTADO `{#tax_additionalData}{#data}Denominación: {denominacion_o_razon_social} Régimen de capital: {regimen_de_capital} Fecha de constitución: {fecha_de_constitucion} … {fecha_de_alta}{/}{/}`
+- **QR DE LA CSF**: FECHA `{tax_additionalData_source_qrValidatedAt}` ESTADO `{#tax_additionalData_source_qrValidation}EXITOSO{/}{^tax_additionalData_source_qrValidation}NO EXITOSO{/}` RESULTADO `{#tax_additionalData}{#data}Denominación: {denominacion_o_razon_social} Régimen de capital: {regimen_de_capital} Fecha de constitución: {fecha_de_constitucion} … {fecha_de_alta}{/}{/}`
 
 ---
 
@@ -81,6 +81,6 @@ FUENTE: `{#board_member_0_names}Escritura pública número {board_member_0_sourc
 2. **Mayúsculas**: `{KEY_PERSON_2_ROLE_NAME}` en una celda — usar minúsculas `{key_person_2_role_name}`.
 3. **Inverso plural** `{^board_members_0_names}` vs individual `board_member_0_names`.
 4. **Poder `delegate`** en apoderados, no listado en la doc web de 5 poderes.
-5. **Typo** `tax_additonalData_source_qrValidatedAt` (debería ser `additionalData`).
+5. **Typo en el Word original** `tax_additonalData_source_qrValidatedAt` (falta la "i") — corregido arriba a `tax_additionalData_source_qrValidatedAt` (grafía confirmada en `corrections.md`).
 
 Estas son justamente las cosas que el **ingeniero de variables** (persona) debe vigilar y que se registran en `corrections.md` cuando se confirme cuál es la forma correcta contra una verificación real.

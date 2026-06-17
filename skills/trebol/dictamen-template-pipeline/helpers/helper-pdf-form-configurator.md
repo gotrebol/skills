@@ -29,27 +29,32 @@ Reglas comunes a ambas convenciones:
 
 ## Cómo configurar cada campo
 
-### Campo simple
-Renombra el campo de formulario existente (o el destinado a ese dato) para que su nombre sea exactamente la variable: `{tax_businessTaxId}`. Sin espacios dentro de las llaves, minúsculas correctas, llaves balanceadas. Conserva posición, tamaño, fuente y propiedades visuales del campo.
+Aplica **siempre Convención A** salvo que la plantilla del cliente ya use Convención B (ver sección introductoria). En Convención A el nombre del campo se deja como está y el token se escribe como **valor / texto por defecto** del campo.
+
+### Campo simple — Convención A (por defecto)
+Localiza el campo de formulario correspondiente. Escribe el token como **valor del campo**: `{tax_businessTaxId}`. El nombre del campo (`Texto100`, `Field_23`, etc.) queda intacto. Sin espacios dentro de las llaves, minúsculas correctas, llaves balanceadas. Conserva posición, tamaño, fuente y propiedades visuales.
+
+Si la plantilla ya usa Convención B (nombre del campo = variable), respeta esa convención: en ese caso el nombre del campo pasa a ser `{tax_businessTaxId}` y el valor queda vacío.
 
 ### Listas (apoderados, accionistas, consejo)
 - Expande a tantas instancias como confirmó el usuario, con la **numeración correcta por familia** (apoderados 1-based; accionistas/consejo/administradores/comisarios 0-based).
-- Si el PDF del cliente ya trae filas/campos para N instancias, nómbralos en orden. Si trae menos campos que instancias necesarias, repórtalo (no agregues campos que descuadren el diseño sin confirmar).
-- Cada subcampo de cada instancia es su propio campo único: `{key_person_1_name}`, `{key_person_1_role}`, `{key_person_2_name}`, …
+- Si el PDF del cliente ya trae campos para N instancias, escribe el token como valor de cada campo en orden. Si trae menos campos que instancias necesarias, repórtalo (no agregues campos que descuadren el diseño sin confirmar con el usuario).
+- Cada subcampo de cada instancia es su propio campo único. Ejemplo en Convención A: campo con nombre arbitrario, valor `{key_person_1_name}`; siguiente campo, valor `{key_person_1_role}`; siguiente, valor `{key_person_2_name}`…
 
 ### Casillas / poderes (x_mark)
-- Si el diseño usa casillas, configúralas como campos cuyo nombre es la variable `*_x_mark` correspondiente, una por casilla, respetando la numeración 1-based de apoderados.
+- Si el diseño usa casillas o campos de marcación, escribe el token `*_x_mark` como **valor** del campo (Convención A). Si la plantilla ya nombra el campo como la variable, respeta Convención B.
+- Una casilla por poder; respeta numeración 1-based de apoderados.
 
 ### FUENTE y condicionales
-- En PDF no hay inverso. La FUENTE se configura como campo(s) de texto cuyo nombre es la variable de la fuente; si el dato no existe, el campo simplemente queda vacío al llenarse. Si el diseño del cliente requiere un texto alternativo de "no encontrado", eso es captura/diseño del cliente, no un inverso — déjalo como esté salvo que el mapeo indique otra cosa.
+- En PDF no hay inverso ni bucles. La FUENTE se configura como campo(s) de texto con el token de la variable de fuente como valor; si el dato no existe, el campo queda vacío al llenarse. Si el diseño del cliente requiere un texto alternativo de "no encontrado", es captura/diseño del cliente — déjalo como esté salvo que el mapeo indique otra cosa.
 
 ## Preservación del diseño (sagrado)
 
-No muevas, redimensiones ni reestilices ningún campo o elemento visual. No cambies fuentes, colores, posiciones, ni el contenido estático del PDF. **No apliques brand guidelines de Trébol.** Lo único que cambia es el **nombre interno** de los campos de formulario (y, si el diseño ya lo contemplaba, la cantidad de instancias de una lista).
+No muevas, redimensiones ni reestilices ningún campo o elemento visual. No cambies fuentes, colores, posiciones ni el contenido estático del PDF. **No apliques brand guidelines de Trébol.** Lo único que cambia es el **valor por defecto** de los campos (Convención A) o su nombre (Convención B si la plantilla ya la usa).
 
 ## Campos SIN_VARIABLE
-- **Texto fijo:** si se decidió texto fijo y el PDF lo permite, déjalo como contenido estático o campo con valor por defecto, según corresponda al diseño.
-- **En blanco:** deja el campo sin nombre de variable (o como campo de captura manual del cliente). No le pongas un nombre de variable inventado.
+- **Texto fijo:** si se decidió texto fijo, escríbelo como valor por defecto del campo (Convención A) o déjalo como contenido estático, según el diseño.
+- **En blanco:** deja el campo con valor vacío (no pongas un token inventado).
 
 ## Output (a Stage 5)
 ```

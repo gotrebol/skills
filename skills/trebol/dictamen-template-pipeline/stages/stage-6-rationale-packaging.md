@@ -40,7 +40,7 @@ GET /v2/verifications/{verification-id}/export/{doc-template-id}
 Header: x-api-key: treb_sk_live_...
 ```
 
-(Ver spec completa en `reference/openapi.yaml`.) Revisar que los IDs se reemplacen en el documento resultante. Si algún ID queda literal, revisar llaves/espacios/numeración (ver `grounding/sintaxis-plantillas.md` sección 7).
+(Ver spec completa en `../reference/openapi.yaml`.) Revisar que los IDs se reemplacen en el documento resultante. Si algún ID queda literal, revisar llaves/espacios/numeración (ver `grounding/sintaxis-plantillas.md` sección 7).
 
 ### Paso 5 — Formato del documento de trazabilidad
 Markdown por defecto (rápido y editable). Si el usuario pide Word, genera un `.docx` Trébol-branded (este documento es interno, no es la plantilla del cliente, así que aquí **sí** aplican los brand guidelines de `trebol-brand-guidelines`). El documento de trazabilidad debe llevar visible "DOCUMENTO INTERNO — TRAZABILIDAD DE CONFIGURACIÓN".
