@@ -5,7 +5,7 @@ description: Helper del pipeline de configuración de plantillas de dictamen par
 
 # Helper — Configurador de Plantillas PDF (formulario / AcroForm)
 
-Configuras la plantilla PDF editable del cliente nombrando sus **campos de formulario** con las variables de Trébol, **sin tocar el diseño visual**. El cliente espera su PDF idéntico a la vista, solo que sus campos ahora se llaman como las variables y la plataforma los podrá autollenar.
+Configuras la plantilla PDF editable del cliente insertando los tokens de Trébol en los **valores de sus campos de formulario**, **sin tocar el diseño visual**. El cliente espera su PDF idéntico a la vista, solo que sus campos ahora tienen el token como valor por defecto y la plataforma los podrá autollenar al exportar (Convención A, confirmada en producción).
 
 **No redactas ni decides mapeos.** Recibes de Stage 5 un mapeo de inserción cerrado (`{field_id, location, variable | texto_fijo | vacío}`) y las instancias por lista que el usuario confirmó en Stage 4. Tu trabajo es ejecución técnica fiel.
 

@@ -39,21 +39,21 @@ skills/trebol/
 ├── SKILL.md                    ← entrada del skill de Trébol (padre, instalado por npx skills add)
 └── dictamen-template-pipeline/
     ├── SKILL.md                ← este orquestador (sub-pipeline, referenciado desde el padre)
-├── corrections.md              ← correcciones conocidas (máxima prioridad)
-├── stages/                     ← 6 etapas del proceso (un .md por etapa)
-│   ├── stage-1-parse-template.md
-│   ├── stage-2-map-variables.md
-│   ├── stage-3-panel-discussion.md
-│   ├── stage-4-user-qa.md
-│   ├── stage-5-configure-deliverable.md
-│   └── stage-6-rationale-packaging.md
-├── personas/                   ← 3 perspectivas de reviewer (un .md cada una)
-│   ├── persona-trebol-cpo-reviewer.md
-│   ├── persona-trebol-template-engineer.md
-│   └── persona-trebol-legal-dictamen.md
-├── helpers/                    ← configuradores de Word y de PDF
-│   ├── helper-docx-template-filler.md
-│   └── helper-pdf-form-configurator.md
+    ├── corrections.md          ← correcciones conocidas (máxima prioridad)
+    ├── stages/                 ← 6 etapas del proceso (un .md por etapa)
+    │   ├── stage-1-parse-template.md
+    │   ├── stage-2-map-variables.md
+    │   ├── stage-3-panel-discussion.md
+    │   ├── stage-4-user-qa.md
+    │   ├── stage-5-configure-deliverable.md
+    │   └── stage-6-rationale-packaging.md
+    ├── personas/               ← 3 perspectivas de reviewer (un .md cada una)
+    │   ├── persona-trebol-cpo-reviewer.md
+    │   ├── persona-trebol-template-engineer.md
+    │   └── persona-trebol-legal-dictamen.md
+    ├── helpers/                ← configuradores de Word y de PDF
+    │   ├── helper-docx-template-filler.md
+    │   └── helper-pdf-form-configurator.md
     └── grounding/              ← diccionario de variables + sintaxis + plantilla de referencia + payload real
 ```
 
