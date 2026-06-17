@@ -1,5 +1,7 @@
 ﻿# Catálogo de Variables de Trébol (grounding)
 
+> **Fecha de sincronización:** 2026-06-17. Este catálogo es un fork manual de `https://docs.gotrebol.com/plantillas/`. Verificar contra la documentación viva si se sospecha drift.
+
 Diccionario destilado de todas las variables (IDs) que Trébol reemplaza automáticamente al exportar una verificación contra una plantilla. Fuente: documentación viva en `https://docs.gotrebol.com/plantillas/` + la plantilla de referencia (`example-template-reference.md`). Ante conflicto con `corrections.md`, prevalece `corrections.md`.
 
 > **Ground truth de grafía y forma:** para confirmar **cómo se escribe exactamente** una variable y **qué forma tiene el dato** (escalar / lista-bucle / objeto), consulta el payload real `dictionary-example.json` (ver `dictionary-example.md`). Ese JSON gana sobre este catálogo y sobre la referencia en cuanto a grafía, salvo que `corrections` diga otra cosa. Este catálogo sigue siendo útil para las familias que **no** aparecen en ese payload (ej. apoderados/consejo, si la verificación de ejemplo no los tenía).

@@ -35,33 +35,34 @@ Lista los tokens marcados como "verificar contra una verificación real" (ej. `d
 ### Paso 4 — Cómo probar (recordatorio operativo)
 
 **Paso 4a — Subir la plantilla al dashboard.**
-Ve a Ajustes → "Plantillas de formatos" en la app de Trébol y sube el archivo configurado. El dashboard te mostrará el `doc-template-id` asignado a esa plantilla (ID visible en la tabla de plantillas). No hay endpoint de API para subir/listar plantillas — es exclusivamente vía dashboard.
+Ve a Ajustes → "Plantillas de formatos" en la app de Trébol y sube el archivo configurado. El dashboard te mostrará el `doc-template-id` asignado a esa plantilla (ID visible en la tabla de plantillas). **Limitación conocida:** no hay endpoint de API para subir ni listar plantillas — es exclusivamente vía dashboard.
+
+> **¿No tienes una verificación lista?** Sigue el flujo end-to-end de `../../flows/kyb-mexico.md` para crear una verificación con estado `finished` en el entorno de pruebas. Necesitas una verificación con datos antes de poder probar la exportación.
 
 **Paso 4b — Exportar (plantilla sin apoderados o con GET simple).**
 ```
-GET /v2/verifications/{verification-id}/export/{doc-template-id}
-x-api-key: treb_sk_live_...
+curl -s -X GET "https://api.gotrebol.com/v2/verifications/{verification-id}/export/{doc-template-id}" \
+  -H "x-api-key: treb_sk_live_..."
 ```
 La respuesta NO es el documento — es un JSON:
 ```json
 { "success": true, "message": "File generated successfully. Download URL provided.",
   "download_url": "https://...", "expires_in": 3600000, "size": 1000000 }
 ```
-Descarga el archivo desde `download_url` (válida 1 hora, no requiere auth adicional). Ábrelo y verifica que los tokens se reemplazaron. Si algún token quedó literal, revisar llaves/espacios/numeración (ver `grounding/sintaxis-plantillas.md` sección 7).
+`expires_in` está en **milisegundos** (3 600 000 ms = 1 hora). Descarga el archivo desde `download_url` dentro de ese período (no requiere auth adicional: es una URL prefirmada). Ábrelo y verifica que los tokens se reemplazaron. Si algún token quedó literal, revisar llaves/espacios/numeración (ver `grounding/sintaxis-plantillas.md` sección 7).
 
 **Paso 4c — Exportar con apoderados (`key_person_N`).**
 Si la plantilla usa variables de apoderado (`{key_person_1_name}`, etc.), el GET simple puede no llenarlas. Usa el POST con el mapeo explícito:
 ```
-POST /v2/verifications/{verification-id}/export/{doc-template-id}
-x-api-key: treb_sk_live_...
-Content-Type: application/json
-
-{
-  "key_people": [
-    { "key": "key_person_1", "person_id": <id_del_apoderado>, "role_id": "<id_del_rol>" },
-    { "key": "key_person_2", "person_id": <id>, "role_id": "<id>" }
-  ]
-}
+curl -s -X POST "https://api.gotrebol.com/v2/verifications/{verification-id}/export/{doc-template-id}" \
+  -H "x-api-key: treb_sk_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "key_people": [
+      { "key": "key_person_1", "person_id": 123, "role_id": "abc-role-id" },
+      { "key": "key_person_2", "person_id": 456, "role_id": "def-role-id" }
+    ]
+  }'
 ```
 Obtén `person_id` y `role_id` del endpoint `GET /v2/verifications/{verification-id}/people` → array `key_people`: `person_id` = campo `people_id`; `role_id` = campo `id` dentro de `roles`. La respuesta es el mismo JSON con `download_url`. Ver spec en `../../reference/openapi.yaml`.
 
