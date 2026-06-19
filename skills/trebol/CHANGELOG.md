@@ -9,6 +9,8 @@ Los integradores pueden preguntarle a su asistente con IA *"¿qué cambió en la
 - **Pipeline de configuración de plantillas de dictamen**: nuevo sub-pipeline `dictamen-template-pipeline/` integrado dentro del skill de Trébol. Permite configurar plantillas Word (.docx) y PDF de clientes insertando las variables de Trébol en los lugares correctos, para que el endpoint de exportación (`GET`/`POST /v2/verifications/{id}/export/{doc-template-id}`) las autollene. Incluye 6 stages, panel de revisión con 3 personas, helpers Word/PDF y catálogo completo de variables.
 - **Endpoint de exportación documentado**: contrato completo del GET y del POST con `key_people` para apoderados; aclarado que la respuesta es `{ download_url }` (no el documento directamente).
 - **Catálogo de variables ampliado**: familia `shareholder_person_0_*` (accionista persona física) documentada con campos confirmados contra payload real.
+- **Consultas públicas externas**: el OpenAPI ahora documenta la sección `external-lookups` en `GET /v2/verifications/{id}/{entity}` y `GET /v2/companies/{tag}/{section}` (evidencia de auditoría de las consultas a SAT, RENAPO, INE y SIGER: dependencia, sujeto, fecha, resultado y artefactos). Se agregaron los schemas `V2ExternalLookup`, `V2ExternalLookupEvidence`, `V2ExternalLookupsData` y `V2PublicResponseExternalLookups`.
+- **Reporte PDF de auditoría**: `GET /verifications/{id}` ahora puede incluir `lookups_report` (`url` firmada + `generated_at`) para descargar el reporte PDF estandarizado de las consultas externas.
 
 ## 2026-05-13
 

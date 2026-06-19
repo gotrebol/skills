@@ -71,8 +71,8 @@ Lee según la pregunta del usuario:
    - Fields en body y response son `snake_case`: `verification_id`, `flow_id`, `tax_id`, `tax_id_number`.
 3. **POST /verifications devuelve `id`** (no `verification_id`) y status `201`. El field se llama `id` aunque represente la verificación; en el body de webhooks el mismo dato se llama `verification_id`.
 4. **Endpoints v2 son paramétricos**:
-   - `/v2/verifications/{verification-id}/{entity}` con `entity` ∈ `[details, shareholders, people, documents, sources]`.
-   - `/v2/companies/{etiqueta}/{section}` con `section` ∈ `[details, shareholders, people, documents, sources]`.
+   - `/v2/verifications/{verification-id}/{entity}` con `entity` ∈ `[details, shareholders, people, documents, sources, external-lookups]`.
+   - `/v2/companies/{etiqueta}/{section}` con `section` ∈ `[details, shareholders, people, documents, sources, external-lookups]`.
    - Las versiones v1 (sin `/v2/`) existen como endpoints fijos por sección: `/companies/{etiqueta}/details`, `/verifications/{verification-id}/people`, etc.
 5. **País — la spec es heterogénea**:
    - `POST /verifications` (schemas `VerificationWithItems` y `VerificationWithFlowId`): la descripción dice literalmente "Actualmente soportado solo para México ('mx')". Cualquier otro valor se procesa como `not_specified`.

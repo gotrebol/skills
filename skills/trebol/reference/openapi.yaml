@@ -473,6 +473,8 @@ paths:
       summary: Obtener un item de verificación por ID
       description: |
         Retorna un item de verificación específico por su ID.
+
+        **Coordenadas de citas:** para items de tipo acta, agrega `?with_citations=true` y la respuesta incluirá `citations.url` con la URL firmada al artifact de coordenadas de ese documento. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
       security:
         - ApiKeyAuth: []
       parameters:
@@ -482,6 +484,14 @@ paths:
           description: El ID único del item de verificación
           schema:
             type: string
+        - name: with_citations
+          in: query
+          required: false
+          description: |
+            Solo aplica a items de tipo acta. Si es `true`, la respuesta incluye `citations.url`: una URL firmada al artifact de coordenadas de ese documento. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: Item de verificación obtenido exitosamente
@@ -562,9 +572,21 @@ paths:
       description: |
         Retorna una verificación pública con sus items serializados.
         Consulta la guía de estructuras de `item_value` por tipo en [Respuestas por tipo de ítem](/docs/guia-devs/respuestas-por-tipo-de-item).
+
+        **Coordenadas de citas:** agrega `?with_citations=true` y los items de tipo acta incluirán un campo `citations.url` con la URL firmada al artifact de coordenadas de ese documento. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+
+        **Reporte de consultas públicas externas:** cuando la verificación incluye consultas a fuentes externas (SAT, RENAPO, INE, SIGER), la respuesta agrega `lookups_report` con una URL firmada para descargar el reporte PDF de auditoría. El campo se omite si no hay reporte (verificaciones sin consultas externas, antiguas o de países aún no soportados). Ver [Consultas públicas externas](/guia-devs/monitorear/consultas-publicas-externas).
       operationId: getVerificationById
       parameters:
         - $ref: "#/components/parameters/verificationIdParam"
+        - name: with_citations
+          in: query
+          required: false
+          description: |
+            Si es `true`, cada item de tipo acta en `items[]` incluye `citations.url`: una URL firmada al artifact de coordenadas de ese documento. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+          schema:
+            type: boolean
+            default: false
       responses:
         "200":
           description: Verificación recuperada exitosamente.
@@ -593,6 +615,27 @@ paths:
                         item_status: "pending"
                         item_type: "csf_mx"
                         item_value: {}
+                ConReporteDeConsultas:
+                  summary: Respuesta con reporte de consultas públicas externas
+                  value:
+                    id: "c8dc41fc-c477-404e-aff7-b9074f86d6d1"
+                    account_id: "99999999-9999-9999-9999-999999999999"
+                    status: "finished"
+                    created_at: "2026-06-16T18:00:00.000Z"
+                    updated_at: "2026-06-16T18:30:00.000Z"
+                    tag: "etiqueta"
+                    tax_id: "SAG160927GIA"
+                    business_name: "Trebol OPCO"
+                    friendly_name: "Empresa ACME S.A. de C.V."
+                    flow_id: "documents-v2"
+                    items:
+                      - id: 25440
+                        item_status: "complete"
+                        item_type: "public_sat_signatures"
+                        item_value: {}
+                    lookups_report:
+                      url: "https://files.gotrebol.com/.../lookups-report.pdf?...firma..."
+                      generated_at: "2026-06-16T18:30:00.000Z"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "404":
@@ -617,10 +660,11 @@ paths:
         - `people`: Personas clave, apoderados y representantes legales
         - `documents`: Documentos asociados a la verificación
         - `sources`: Fuentes de información (items) que alimentan la verificación
+        - `external-lookups`: Evidencia de auditoría de las consultas a fuentes públicas (SAT, RENAPO, INE, SIGER). Ver [Consultas públicas externas](/guia-devs/monitorear/consultas-publicas-externas).
 
         **Fuentes (`sources`) y extracciones automáticas:** cuando la cuenta tiene una extracción automática activa para el tipo de ítem correspondiente, cada elemento en `data.sources` puede incluir `custom_user_prompts`: un objeto cuyas claves son el identificador editable de la extracción automática (`prompt_id`) y cuyos valores son el JSON extraído según el esquema de la versión en uso. Más detalle en la guía [Extracciones automáticas](/producto/guias/extracciones-automaticas).
 
-        **Coordenadas de citas:** cuando `entity=people`, agrega `?with_citations=true` y obtendrás en `data.citations.url` una URL firmada al artifact de coordenadas. Detalle completo en [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+        **Coordenadas de citas:** agrega `?with_citations=true` para obtener URLs firmadas al artifact de coordenadas. Según la sección: `people` y `shareholders` añaden `data.citations.url`; `sources` añade `citations.url` en cada item de tipo acta del array `data.sources`. Detalle completo en [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
 
         <Accordion title="Endpoints v1 (Legacy)">
           <Warning>
@@ -647,12 +691,15 @@ paths:
           description: Sección solicitada
           schema:
             type: string
-            enum: [details, shareholders, people, documents, sources]
+            enum: [details, shareholders, people, documents, sources, external-lookups]
         - name: with_citations
           in: query
           required: false
           description: |
-            Solo aplica cuando `entity=people`. Si es `true`, la respuesta incluye `data.citations.url`: una URL firmada por CloudFront que apunta a un JSON con las coordenadas (`bounding_boxes`) de cada field extraído. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+            Aplica a `people`, `shareholders` y `sources`. Si es `true`:
+            - Para `people` y `shareholders`: añade `data.citations.url`, una URL firmada al artifact de coordenadas de esa sección.
+            - Para `sources`: añade `citations.url` en cada item de tipo acta dentro de `data.sources`.
+            Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
           schema:
             type: boolean
             default: false
@@ -673,6 +720,8 @@ paths:
                     $ref: "#/components/schemas/V2PublicResponseDocuments"
                   - title: "Fuentes"
                     $ref: "#/components/schemas/V2PublicResponseSources"
+                  - title: "Consultas públicas externas"
+                    $ref: "#/components/schemas/V2PublicResponseExternalLookups"
               examples:
                 details:
                   $ref: "#/components/examples/V2DetailsExample"
@@ -684,6 +733,8 @@ paths:
                   $ref: "#/components/examples/V2DocumentsExample"
                 sources:
                   $ref: "#/components/examples/V2SourcesExample"
+                external-lookups:
+                  $ref: "#/components/examples/V2ExternalLookupsExample"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "404":
@@ -707,10 +758,11 @@ paths:
         - `people`: Personas clave, apoderados y representantes legales
         - `documents`: Documentos asociados a la verificación
         - `sources`: Fuentes de información (items) que alimentan la verificación
+        - `external-lookups`: Evidencia de auditoría de las consultas a fuentes públicas (SAT, RENAPO, INE, SIGER). Ver [Consultas públicas externas](/guia-devs/monitorear/consultas-publicas-externas).
 
         **Fuentes (`sources`) y extracciones automáticas:** cuando la cuenta tiene una extracción automática activo para el tipo de ítem correspondiente, cada elemento en `data.sources` puede incluir `custom_user_prompts`: un objeto cuyas claves son el identificador editable de la extracción automática (`prompt_id`) y cuyos valores son el JSON extraído según el esquema de la versión en uso. Más detalle en la guía [Extracciones automáticas](/producto/guias/extracciones-automaticas).
 
-        **Coordenadas de citas:** cuando `section=people`, agrega `?with_citations=true` y obtendrás en `data.citations.url` una URL firmada al artifact de coordenadas. Detalle completo en [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+        **Coordenadas de citas:** agrega `?with_citations=true` para obtener URLs firmadas al artifact de coordenadas. Según la sección: `people` y `shareholders` añaden `data.citations.url`; `sources` añade `citations.url` en cada item de tipo acta del array `data.sources`. Detalle completo en [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
 
         <Accordion title="Endpoints v1 (Legacy)">
           <Warning>
@@ -737,12 +789,15 @@ paths:
           description: Sección solicitada
           schema:
             type: string
-            enum: [details, shareholders, people, documents, sources]
+            enum: [details, shareholders, people, documents, sources, external-lookups]
         - name: with_citations
           in: query
           required: false
           description: |
-            Solo aplica cuando `section=people`. Si es `true`, la respuesta incluye `data.citations.url`: una URL firmada por CloudFront que apunta a un JSON con las coordenadas (`bounding_boxes`) de cada field extraído. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+            Aplica a `people`, `shareholders` y `sources`. Si es `true`:
+            - Para `people` y `shareholders`: añade `data.citations.url`, una URL firmada al artifact de coordenadas de esa sección.
+            - Para `sources`: añade `citations.url` en cada item de tipo acta dentro de `data.sources`.
+            Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
           schema:
             type: boolean
             default: false
@@ -763,6 +818,8 @@ paths:
                     $ref: "#/components/schemas/V2PublicResponseDocuments"
                   - title: "Fuentes"
                     $ref: "#/components/schemas/V2PublicResponseSources"
+                  - title: "Consultas públicas externas"
+                    $ref: "#/components/schemas/V2PublicResponseExternalLookups"
               examples:
                 details:
                   $ref: "#/components/examples/V2DetailsExample"
@@ -774,6 +831,8 @@ paths:
                   $ref: "#/components/examples/V2DocumentsExample"
                 sources:
                   $ref: "#/components/examples/V2SourcesExample"
+                external-lookups:
+                  $ref: "#/components/examples/V2ExternalLookupsExample"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "404":
@@ -806,7 +865,7 @@ paths:
         - in: path
           name: doc-template-id
           required: true
-          description: El ID de la plantilla de documento. Ver [plantillas de documentos](/docs/plantillas/gestion).
+          description: El ID de la plantilla de documento. Ver [plantillas de documentos](/plantillas/gestion).
           schema:
             type: string
       responses:
@@ -891,7 +950,7 @@ paths:
         - in: path
           name: doc-template-id
           required: true
-          description: El ID de la plantilla de documento. Ver [plantillas de documentos](/docs/plantillas/gestion).
+          description: El ID de la plantilla de documento. Ver [plantillas de documentos](/plantillas/gestion).
           schema:
             type: string
       requestBody:
@@ -3431,6 +3490,107 @@ components:
             id: "c8dc41fc-c477-404e-aff7-b9074f86d6d1"
             tag: "mi-etiqueta"
             status: "pending"
+    V2ExternalLookupsExample:
+      summary: external-lookups
+      value:
+        success: true
+        data:
+          - source: "sat"
+            lookup_type: "signature_certificates"
+            agency_name: "Servicio de Administración Tributaria (SAT)"
+            subject_type: "business"
+            subject_name: "EMPRESA EJEMPLO SA DE CV"
+            subject_identifier: "ABC123456789"
+            queried_at: "2026-06-16T18:25:00.000Z"
+            status: "success"
+            evidence:
+              - type: "screenshot"
+                url: "https://files.gotrebol.com/.../sat-screenshot.jpg?...firma..."
+                label: "SAT certificate lookup screenshot"
+                generated_at: "2026-06-16T18:25:00.000Z"
+                expires_at: "2026-06-16T19:25:00.000Z"
+            data:
+              tax_id: "ABC123456789"
+              legal_name: "EMPRESA EJEMPLO SA DE CV"
+              business_type: "SOCIEDAD ANONIMA DE CAPITAL VARIABLE"
+              certificates:
+                - serial_number: "00001000000700333012"
+                  status: "Activo"
+                  type: "SELLO"
+                  start_date: "2023-01-01T00:00:00.000Z"
+                  end_date: "2027-12-31T23:59:59.000Z"
+                  legal_representative_rfc: "REP123456EF1"
+                  person_email: null
+          - source: "sat"
+            lookup_type: "csf_qr_validation"
+            agency_name: "Servicio de Administración Tributaria (SAT)"
+            subject_type: "business"
+            subject_name: "EMPRESA EJEMPLO SA DE CV"
+            subject_identifier: "ABC123456789"
+            queried_at: "2026-06-16T18:22:00.000Z"
+            status: "success"
+            evidence:
+              - type: "external_link"
+                url: "https://siat.sat.gob.mx/app/qr/faces/pages/mobile/validadorqr.jsf?D1=10&D2=1&D3=..."
+                label: "SAT CSF QR validator"
+                generated_at: null
+                expires_at: null
+            data:
+              validation_result: "VALID"
+              validation_status: "completed"
+              validation_message: "Constancia válida y vigente."
+              constancia_type: "moral"
+          - source: "renapo"
+            lookup_type: "curp"
+            agency_name: "Registro Nacional de Población (RENAPO)"
+            subject_type: "person"
+            subject_name: "Juan Carlos Pérez García"
+            subject_identifier: "PERE800101HDFXXX01"
+            queried_at: null
+            status: "success"
+            evidence:
+              - type: "pdf"
+                url: "https://files.gotrebol.com/.../renapo-curp.pdf?...firma..."
+                label: "RENAPO CURP certificate"
+                generated_at: null
+                expires_at: "2026-06-16T19:25:00.000Z"
+            data:
+              curp: "PERE800101HDFXXX01"
+              curp_status: "alta_normal"
+              names: "Juan Carlos"
+              first_surname: "Pérez"
+              second_surname: "García"
+          - source: "ine"
+            lookup_type: "lista_nominal"
+            agency_name: "Instituto Nacional Electoral (INE)"
+            subject_type: "person"
+            subject_name: "Juan Carlos Pérez García"
+            subject_identifier: "PEREJC80010112H300"
+            queried_at: "2026-06-16T18:20:00.000Z"
+            status: "success"
+            evidence: []
+            data:
+              validation_message: "Credencial válida y vigente en lista nominal."
+          - source: "siger"
+            lookup_type: "commercial_registry"
+            agency_name: "Sistema Integral de Gestión Registral (SIGER)"
+            subject_type: "business"
+            subject_name: "EMPRESA EJEMPLO SA DE CV"
+            subject_identifier: "N-2024038395"
+            queried_at: "2026-06-16T18:15:00.000Z"
+            status: "success"
+            evidence: []
+            data:
+              legal_name: "EMPRESA EJEMPLO SA DE CV"
+              fme_number: "N-2024038395"
+              fme_status: "Activo"
+              federal_entity: "Ciudad de México"
+        meta:
+          section: "external-lookups"
+          verification:
+            id: "c8dc41fc-c477-404e-aff7-b9074f86d6d1"
+            tag: "mi-etiqueta"
+            status: "finished"
   schemas:
     V2VerificationMeta:
       type: object
@@ -3444,7 +3604,7 @@ components:
       properties:
         section:
           type: string
-          enum: [details, shareholders, people, documents, sources]
+          enum: [details, shareholders, people, documents, sources, external-lookups]
         verification:
           $ref: "#/components/schemas/V2VerificationMeta"
 
@@ -3893,8 +4053,8 @@ components:
       properties:
         id: { type: number }
         currency: { type: string }
-        fixed_shares: { type: number }
-        fixed_value: { type: number }
+        fixed_shares: { type: string }
+        fixed_value: { type: string }
         id_number: { type: string }
         id_number_rfc: { type: string, nullable: true }
         id_type: { type: string }
@@ -3905,11 +4065,11 @@ components:
           nullable: true
           description: |
             Código de país ISO 3166-1 alpha-2 (dos letras) derivado de la nacionalidad. Ejemplos: "MX" para México, "US" para Estados Unidos, "PE" para Perú. Este campo convierte el texto de nacionalidad a su código ISO estándar.
-        total_shares: { type: number }
-        total_value: { type: number }
+        total_shares: { type: string }
+        total_value: { type: string }
         type: { type: string }
-        variable_shares: { type: number }
-        variable_value: { type: number }
+        variable_shares: { type: string }
+        variable_value: { type: string }
         share_percentage: { type: number }
         aml_validated_at: { type: string, nullable: true }
         aml_validation_status: { type: string, nullable: true }
@@ -3933,14 +4093,14 @@ components:
     V2CompanyCapital:
       type: object
       properties:
-        fixed_value: { type: number }
-        fixed_shares: { type: number }
+        fixed_value: { type: string }
+        fixed_shares: { type: string }
         fixed_value_currency: { type: string }
-        variable_value: { type: number }
-        variable_shares: { type: number }
+        variable_value: { type: string }
+        variable_shares: { type: string }
         variable_value_currency: { type: string }
-        total_value: { type: number }
-        total_shares: { type: number }
+        total_value: { type: string }
+        total_shares: { type: string }
         total_value_currency: { type: string }
 
     V2ShareholdersData:
@@ -3955,6 +4115,19 @@ components:
         capital:
           $ref: "#/components/schemas/V2CompanyCapital"
           nullable: true
+        citations:
+          type: object
+          description: |
+            Presente solo cuando se llamó con `?with_citations=true`. Contiene la URL firmada (CloudFront) al artifact de coordenadas en S3, que mapea cada field extraído a sus `bounding_boxes` dentro del PDF original. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+          properties:
+            url:
+              type: string
+              format: uri
+              description: |
+                URL firmada y temporal. Descarga el JSON cuanto antes; si caduca, vuelve a llamar al endpoint con el flag para obtener una nueva. Si el artifact aún no se horneó para esta verificación, no se devuelve la llave citations.
+              example: "https://files.gotrebol.com/{verification_id}/citations/shareholders.json?Expires=…&Signature=…"
+          required:
+            - url
 
     V2VerificationDocument:
       type: object
@@ -4017,6 +4190,19 @@ components:
             Resultados de extracciones automáticas de la cuenta. Cada clave es el `prompt_id` (identificador editable de la extracción automática); el valor es un objeto JSON acorde al esquema de la versión activa vinculada a ese tipo de documento. Solo aparece cuando hay extracción exitosa para ese ítem.
           additionalProperties: true
           nullable: true
+        citations:
+          type: object
+          description: |
+            Presente solo cuando se llamó con `?with_citations=true` y el ítem es de tipo acta. Contiene la URL firmada (CloudFront) al artifact de coordenadas en S3. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+          properties:
+            url:
+              type: string
+              format: uri
+              description: |
+                URL firmada y temporal. Descarga el JSON cuanto antes; si caduca, vuelve a llamar al endpoint con el flag para obtener una nueva. Si el artifact aún no se horneó para esta verificación, no se devuelve la llave citations.
+              example: "https://files.gotrebol.com/{verification_id}/citations/sources/{item_id}.json?Expires=…&Signature=…"
+          required:
+            - url
 
     V2SourcesData:
       type: object
@@ -4058,6 +4244,82 @@ components:
       properties:
         success: { type: boolean, enum: [true] }
         data: { $ref: "#/components/schemas/V2SourcesData" }
+        meta: { $ref: "#/components/schemas/V2Meta" }
+
+    V2ExternalLookupEvidence:
+      type: object
+      description: Artefacto de soporte de una consulta externa.
+      properties:
+        type:
+          type: string
+          description: Tipo de evidencia.
+          enum: [screenshot, pdf, external_link, trebol_report]
+        url:
+          type: string
+          description: >
+            URL del artefacto. Para `screenshot` y `pdf` es una URL firmada de corta
+            duración (~1 hora); para `external_link` es la URL pública de la dependencia.
+        label: { type: string, nullable: true, description: "Descripción legible del artefacto." }
+        generated_at:
+          type: string
+          nullable: true
+          description: "Fecha (ISO 8601) en que se produjo el artefacto, si se conoce."
+        expires_at:
+          type: string
+          nullable: true
+          description: "Fecha (ISO 8601) en que expira la URL firmada. null para enlaces externos o estáticos."
+
+    V2ExternalLookup:
+      type: object
+      description: Registro de una consulta realizada a una fuente pública o gubernamental.
+      properties:
+        source:
+          type: string
+          description: Fuente consultada.
+          enum: [sat, renapo, ine, siger]
+        lookup_type:
+          type: string
+          description: Tipo de consulta realizada.
+          enum: [signature_certificates, csf_qr_validation, curp, lista_nominal, commercial_registry]
+        agency_name: { type: string, description: "Nombre completo de la dependencia consultada." }
+        subject_type:
+          type: string
+          description: Sobre quién se realizó la consulta.
+          enum: [business, person]
+        subject_name: { type: string, nullable: true, description: "Nombre del sujeto consultado." }
+        subject_identifier:
+          type: string
+          nullable: true
+          description: "Identificador enviado a la dependencia: RFC, CURP, clave de elector o folio mercantil (FME)."
+        queried_at:
+          type: string
+          nullable: true
+          description: "Fecha y hora (ISO 8601) de la consulta. null cuando la fuente aún no expone una fecha confiable."
+        status:
+          type: string
+          description: Resultado de la consulta.
+          enum: [success, not_found, failed, pending, unknown]
+        evidence:
+          type: array
+          description: "Artefactos de soporte de la consulta (capturas, PDFs o enlaces a la dependencia)."
+          items: { $ref: "#/components/schemas/V2ExternalLookupEvidence" }
+        data:
+          type: object
+          additionalProperties: true
+          description: >
+            Datos extraídos de la consulta, específicos de cada fuente y en snake_case.
+            Ver el detalle por ítem en [Items de consultas públicas — KYB México](/guia-devs/uso-kyb/mexico/items-consultas-publicas).
+
+    V2ExternalLookupsData:
+      type: array
+      description: Arreglo plano de registros de consultas externas, uno por consulta realizada.
+      items: { $ref: "#/components/schemas/V2ExternalLookup" }
+
+    V2PublicResponseExternalLookups:
+      type: object
+      properties:
+        success: { type: boolean, enum: [true] }
+        data: { $ref: "#/components/schemas/V2ExternalLookupsData" }
         meta: { $ref: "#/components/schemas/V2Meta" }
 
     ErrorResponse:
@@ -4144,6 +4406,23 @@ components:
           type: object
           additionalProperties: true
           nullable: true
+        lookups_report:
+          type: object
+          nullable: true
+          description: >
+            Reporte PDF de auditoría de las consultas públicas externas (SAT, RENAPO, INE, SIGER).
+            Presente solo cuando existe un reporte para la verificación; se omite en caso contrario.
+            Ver [Consultas públicas externas](/guia-devs/monitorear/consultas-publicas-externas).
+          properties:
+            url:
+              type: string
+              description: >
+                URL firmada para descargar el PDF (se sirve como adjunto). Es de corta duración y se
+                regenera en cada llamada; ver el detalle de uso en
+                [Consultas públicas externas](/guia-devs/monitorear/consultas-publicas-externas).
+            generated_at:
+              type: string
+              description: "Fecha y hora (ISO 8601) en que se generó el reporte."
         _kind:
           type: string
           enum: [public_verification, verification]
@@ -4205,7 +4484,7 @@ components:
           type: string
           nullable: true
           description: |
-            Campo opcional que indica errores públicos relacionados con el procesamiento del ítem. 
+            Campo opcional que indica errores públicos relacionados con el procesamiento del ítem.
             Valores permitidos:
             - `password_protected_pdf`: El PDF subido está protegido con contraseña y no puede ser procesado.
             - `get_input_file_info_failed`: Falló la obtención de información del archivo de entrada.
@@ -4231,6 +4510,19 @@ components:
         tag: { type: string, nullable: true }
         item_scope: { type: string, nullable: true }
         original_file_url: { type: string, nullable: true }
+        citations:
+          type: object
+          description: |
+            Presente solo cuando se llamó con `?with_citations=true` y el item es de tipo acta. Contiene la URL firmada (CloudFront) al artifact de coordenadas en S3. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
+          properties:
+            url:
+              type: string
+              format: uri
+              description: |
+                URL firmada y temporal. Descarga el JSON cuanto antes; si caduca, vuelve a llamar al endpoint con el flag para obtener una nueva. Si el artifact aún no se horneó para esta verificación, no se devuelve la llave citations.
+              example: "https://files.gotrebol.com/{verification_id}/citations/sources/{item_id}.json?Expires=…&Signature=…"
+          required:
+            - url
     VerificationSummary:
       type: object
       properties:
@@ -4795,18 +5087,18 @@ components:
       properties:
         id: { type: number }
         currency: { type: string }
-        fixed_shares: { type: number }
-        fixed_value: { type: number }
+        fixed_shares: { type: string }
+        fixed_value: { type: string }
         id_number: { type: string }
         id_number_rfc: { type: string, nullable: true }
         id_type: { type: string }
         name: { type: string }
         nationality: { type: string }
-        total_shares: { type: number }
-        total_value: { type: number }
+        total_shares: { type: string }
+        total_value: { type: string }
         type: { type: string }
-        variable_shares: { type: number }
-        variable_value: { type: number }
+        variable_shares: { type: string }
+        variable_value: { type: string }
         share_percentage: { type: number }
         aml_validated_at: { type: string, nullable: true }
         aml_validation_status: { type: string, nullable: true }
@@ -4981,7 +5273,7 @@ components:
               description: Email del creador de la verificacion, el usuario empresarial.
     ClientItemType:
       type: string
-      description: Especificacion del tipo de item segun el cliente. Consulta los valores disponibles en [Tipos de ítem](/docs/guia-devs/tipos-de-item)
+      description: Especificacion del tipo de item segun el cliente. Consulta los valores disponibles en [Tipos de ítem](/guia-devs/referencia/tipos-item)
     VerificationWithItems:
       title: Con items predefinidos por el usuario
       type: object
