@@ -145,7 +145,7 @@ paths:
                     example: "documents-v2"
                   documents_status:
                     type: string
-                    enum: [pending_upload, partial_upload, full_upload]
+                    enum: [pending_upload, partial_upload, pending_external, full_upload]
                     description: Estado de la colección de documentos.
                     example: "pending_upload"
                   onboarding_url:

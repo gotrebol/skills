@@ -52,6 +52,9 @@ Verificación completada exitosamente. **Es el evento más importante** — sign
 ### `verification.v2.extraction_completed`
 Todos los items de extracción terminaron, pero la verificación aún no está marcada como "finished". Útil para acceso anticipado a datos extraídos.
 
+### `verification.v2.document_status_updated`
+Cambió el estado documental (`documents_status`) de la verificación: `pending_upload` → `partial_upload` → `pending_external` → `full_upload` (puede retroceder tras una reapertura). El payload incluye `documents_status`, `previous_documents_status` y `updated_at`. Para saber cuándo el prospecto completó su expediente, filtra por `documents_status: "full_upload"`. **Nota:** este evento no incluye `account_name`.
+
 ### `verification_item.v2.completed`
 Un item específico completó su procesamiento. Contiene `item_error` si hubo problema:
 - `password_protected_pdf` — PDF con contraseña, no se pudo procesar
@@ -86,6 +89,26 @@ Trébol terminó de buscar el CURP de una persona. Posibles errores:
   }
 }
 ```
+
+### `verification.v2.document_status_updated` (expediente completo)
+
+```json
+{
+  "event_name": "verification.v2.document_status_updated",
+  "data": {
+    "verification_id": "5853393e-8cf7-4dc7-afd9-a92df69fff2b",
+    "account_id": "212457cc-09bb-4308-b69b-f719e6f2eb03",
+    "created_at": "2025-01-15T10:30:00Z",
+    "status": "pending",
+    "verification_tag": "tu-tag-1234",
+    "documents_status": "full_upload",
+    "previous_documents_status": "partial_upload",
+    "updated_at": "2025-01-15T11:05:27Z"
+  }
+}
+```
+
+A diferencia de los demás eventos v2, el payload no trae `account_name`.
 
 ### `verification_item.v2.completed` (con error)
 

@@ -4,6 +4,12 @@ Historial de cambios al skill de Trébol distribuido vía [skills.sh](https://ww
 
 Los integradores pueden preguntarle a su asistente con IA *"¿qué cambió en la última versión del skill de Trébol?"* y recibir un resumen consultando este archivo.
 
+## 2026-07-07
+
+- **Nuevo webhook `verification.v2.document_status_updated`**: se dispara en cada transición del estado documental (`documents_status`) de una verificación, con `previous_documents_status` y `updated_at` en el payload. Permite detectar cuándo el prospecto completa su expediente (`full_upload`) y calcular tiempos de respuesta sin polling. A diferencia de los demás eventos v2, no incluye `account_name`.
+- **Enum de `documents_status` corregido en el OpenAPI**: se agregó el valor `pending_external` (documentos completos con pasos externos pendientes, como formularios o UBOs), que faltaba en el spec.
+- **Copia del OpenAPI sincronizada**: `reference/openapi.yaml` vuelve a coincidir con el spec canónico (incluye también los parámetros `with_citations` de coordenadas de citas).
+
 ## 2026-06-17
 
 - **Pipeline de configuración de plantillas de dictamen**: nuevo sub-pipeline `dictamen-template-pipeline/` integrado dentro del skill de Trébol. Permite configurar plantillas Word (.docx) y PDF de clientes insertando las variables de Trébol en los lugares correctos, para que el endpoint de exportación (`GET`/`POST /v2/verifications/{id}/export/{doc-template-id}`) las autollene. Incluye 6 stages, panel de revisión con 3 personas, helpers Word/PDF y catálogo completo de variables.
