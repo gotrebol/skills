@@ -1,7 +1,7 @@
 ---
 name: trebol
 description: Integración con la API de Trébol para automatizar procesos de back office (KYB y más). Cubre endpoints, autenticación, items, account-flows, widget, webhooks y errores.
-last_updated: 2026-07-07
+last_updated: 2026-07-24
 ---
 
 # Trébol — Integración API
@@ -31,7 +31,7 @@ Trébol es una plataforma para automatizar procesos de back office. Hoy el core 
 
 ## Cuándo consultar este skill
 
-- Endpoints: `/verifications`, `/verifications/{verification-id}/...`, `/v2/verifications/{verification-id}/{entity}`, `/v2/companies/{etiqueta}/{section}`, `/account-flows`, `/v2/form-schemas`, `/api-keys`, `/v2/webhooks`, `/whitelist-ips`, `/v2/retention-policy`, `/verification-items/{id}`, `/verification-items/{itemId}/invalidate`
+- Endpoints: `/verifications`, `/verifications/{verification-id}/...`, `/v2/verifications/{verification-id}/{entity}`, `/v2/companies/{etiqueta}/{section}`, `/account-flows`, `/v2/form-schemas`, `/api-keys`, `/v2/webhooks`, `/whitelist-ips`, `/v2/retention-policy`, `/verification-items/{id}`, `/verification-items/{itemId}/invalidate`, `/v2/custom-item-types`, `/v2/custom-item-types/{id}`, `/v2/custom-item-types/{id}/processes`, `/v2/custom-item-types/{id}/processes/{processId}`
 - Crear, leer, monitorear verificaciones
 - Configurar webhooks y validar la firma HMAC
 - Errores de procesamiento (PDFs protegidos, búsqueda CURP fallida, etc.)

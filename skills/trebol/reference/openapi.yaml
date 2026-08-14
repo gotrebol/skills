@@ -50,6 +50,8 @@ tags:
     description: Endpoints para exportar datos de verificaciones a documentos personalizados.
   - name: Leer información de la empresa v1
     description: Endpoints v1 (legacy) para obtener información detallada de empresas y verificaciones. Te recomendamos migrar a los endpoints v2.
+  - name: Tipos de Ítem Personalizados
+    description: Endpoints para crear y gestionar tipos de ítem personalizados con procesos configurables de clasificación, validación y extracción.
 
 paths:
   /verifications:
@@ -108,6 +110,20 @@ paths:
                   key_people:
                     - names: "John Doe"
                       scope: ["powers"]
+              ConTipoItemPersonalizado:
+                summary: Usando un tipo de ítem personalizado
+                description: |
+                  Cuando tienes un tipo de ítem personalizado creado vía `/v2/custom-item-types`,
+                  usa su `name` como valor de `type` en el ítem.
+                  Consulta la guía [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados).
+                value:
+                  country: "mx"
+                  tag: "empresa-ejemplo-001"
+                  friendly_name: "Empresa ACME S.A. de C.V."
+                  items:
+                    - type: "cit_contrato_arrendamiento"
+                      options:
+                        file_url: "https://www.somepresignedURL.com/withDownloadableFile"
       responses:
         "201":
           description: Verificación creada exitosamente.
@@ -151,8 +167,8 @@ paths:
                   onboarding_url:
                     type: string
                     format: uri
-                    description: Link de onboarding para el cliente.
-                    example: "https://onboarding.gotrebol.com/verification/c8dc41fc-c477-404e-aff7-b9074f86d6d1/docs-v2?accessToken=accesstokenid32432434country=mx&client=99999999-9999-9999-9999-999999999999"
+                    description: Link de onboarding para el cliente. Usa el dominio default de Trébol, o el dominio personalizado de la cuenta cuando está verificado (ver "Personalizar el widget").
+                    example: "https://onboarding.gotrebol.com/verification/c8dc41fc-c477-404e-aff7-b9074f86d6d1/docs-v2?accessToken=accesstokenid32432434&country=mx&client=99999999-9999-9999-9999-999999999999"
                   details_url:
                     type: string
                     format: uri
@@ -301,9 +317,24 @@ paths:
                       creator_email: "j***@trebol.com"
                       business_name: "Empresa Ejemplo S.A. de C.V."
         "400":
-          $ref: "#/components/responses/BadRequestError"
+          description: |
+            Solicitud inválida. Posibles causas:
+            - Un ítem referencia un tipo de ítem personalizado que no existe o fue eliminado.
+            - Otros errores de validación del request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+        "422":
+          description: |
+            Un ítem referencia un tipo de ítem personalizado archivado.
+            El tipo tiene `status = 'archived'`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           $ref: "#/components/responses/InternalServerError"
     get:
@@ -662,7 +693,7 @@ paths:
         - `sources`: Fuentes de información (items) que alimentan la verificación
         - `external-lookups`: Evidencia de auditoría de las consultas a fuentes públicas (SAT, RENAPO, INE, SIGER). Ver [Consultas públicas externas](/guia-devs/monitorear/consultas-publicas-externas).
 
-        **Fuentes (`sources`) y extracciones automáticas:** cuando la cuenta tiene una extracción automática activa para el tipo de ítem correspondiente, cada elemento en `data.sources` puede incluir `custom_user_prompts`: un objeto cuyas claves son el identificador editable de la extracción automática (`prompt_id`) y cuyos valores son el JSON extraído según el esquema de la versión en uso. Más detalle en la guía [Extracciones automáticas](/producto/guias/extracciones-automaticas).
+        **Fuentes (`sources`) y extracciones personalizadas:** cuando la cuenta tiene una extracción personalizada activa o un tipo de ítem personalizado con procesos de extracción, cada elemento en `data.sources` puede incluir `custom_user_prompts`: un objeto cuyas claves son el identificador del procesamiento (`prompt_id` para extracciones personalizadas o `process_reference` para tipos de ítem personalizados) y cuyos valores son el JSON extraído según el esquema de la versión en uso. Más detalle en las guías [Extracciones personalizadas](/producto/guias/extracciones-personalizadas) y [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados).
 
         **Coordenadas de citas:** agrega `?with_citations=true` para obtener URLs firmadas al artifact de coordenadas. Según la sección: `people` y `shareholders` añaden `data.citations.url`; `sources` añade `citations.url` en cada item de tipo acta del array `data.sources`. Detalle completo en [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
 
@@ -760,7 +791,7 @@ paths:
         - `sources`: Fuentes de información (items) que alimentan la verificación
         - `external-lookups`: Evidencia de auditoría de las consultas a fuentes públicas (SAT, RENAPO, INE, SIGER). Ver [Consultas públicas externas](/guia-devs/monitorear/consultas-publicas-externas).
 
-        **Fuentes (`sources`) y extracciones automáticas:** cuando la cuenta tiene una extracción automática activo para el tipo de ítem correspondiente, cada elemento en `data.sources` puede incluir `custom_user_prompts`: un objeto cuyas claves son el identificador editable de la extracción automática (`prompt_id`) y cuyos valores son el JSON extraído según el esquema de la versión en uso. Más detalle en la guía [Extracciones automáticas](/producto/guias/extracciones-automaticas).
+        **Fuentes (`sources`) y extracciones personalizadas:** cuando la cuenta tiene una extracción personalizada activa o un tipo de ítem personalizado con procesos de extracción, cada elemento en `data.sources` puede incluir `custom_user_prompts`: un objeto cuyas claves son el identificador del procesamiento (`prompt_id` para extracciones personalizadas o `process_reference` para tipos de ítem personalizados) y cuyos valores son el JSON extraído según el esquema de la versión en uso. Más detalle en las guías [Extracciones personalizadas](/producto/guias/extracciones-personalizadas) y [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados).
 
         **Coordenadas de citas:** agrega `?with_citations=true` para obtener URLs firmadas al artifact de coordenadas. Según la sección: `people` y `shareholders` añaden `data.citations.url`; `sources` añade `citations.url` en cada item de tipo acta del array `data.sources`. Detalle completo en [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
 
@@ -1192,17 +1223,14 @@ paths:
                       type:
                         type: string
                         description: |
-                          El tipo de documento o ítem a procesar.
-                          - Para **Paso 2 (Validación)**: usar `doc_validation`
-                          - Para **Paso 5 (Extracción)**: usar tipos específicos como `ac_mx`, `csf_mx`, `union_documents_extractor`
-                        enum:
-                          [
-                            "doc_validation",
-                            "ac_mx",
-                            "csf_mx",
-                            "union_documents_extractor",
-                            "generic",
-                          ]
+                          El tipo de documento o ítem a procesar. Acepta cualquier tipo soportado por Trébol.
+                          - **Clasificación**: `generic` (Trébol detecta el tipo automáticamente).
+                          - **Validación**: `doc_validation` (requiere `options.client_item_type`).
+                          - **División de PDFs multi-documento**: `doc_splitter` (ver [guía del divisor de documentos](/producto/guias/doc-splitter)).
+                          - **Extractores built-in México**: `ac_mx` (acta constitutiva), `aa_mx` (acta de asamblea), `pw_mx` (poder), `fme_mx` (fusión/escisión), `csf_mx` (constancia SAT), `union_documents_extractor`, entre otros.
+                          - **Tipos personalizados**: nombres con prefijo `cit_` definidos en [tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados).
+
+                          La lista completa vive en `SUPPORTED_ITEM_TYPES` del backend y crece con nuevos extractores; para ver la forma de respuesta por cada tipo consulta [respuestas por tipo de item](/guia-devs/referencia/respuestas-por-tipo-de-item).
                         example: "doc_validation"
                       tags:
                         type: object
@@ -1213,9 +1241,10 @@ paths:
                           client_id: "some-client-id"
                       options:
                         type: object
-                        required:
-                          - file_url
-                        description: Opciones adicionales para el ítem, como el alcance de las personas involucradas.
+                        description: |
+                          Opciones adicionales para el ítem. Para el origen del archivo envía **uno** de:
+                          `file_url` (URL descargable) o `file_source: "item"` (para referenciar un corte de un `doc_splitter`).
+                          Si omites ambos, Trébol devuelve una `upload_url` presignada (ver [flujo de carga directa](/guia-devs/crear-verificaciones/via-api/carga-directa)). `doc_splitter` es la excepción: requiere `file_url` o `file_source` en la creación.
                         properties:
                           file_url:
                             type: string
@@ -1234,6 +1263,36 @@ paths:
                               example: "powers"
                           client_item_type:
                             $ref: "#/components/schemas/ClientItemType"
+                          allowed_item_types:
+                            type: array
+                            description: |
+                              Solo para `doc_splitter`. Restringe los tipos que el splitter puede identificar. Acepta tipos built-in (por ejemplo `ac_mx`, `aa_mx`) y nombres de tipos de ítem personalizados (`cit_...`). Si se omite o está vacío, se usa el catálogo base completo.
+                              **No confundir con** el `allowed_item_types` del `RequirementDefinition` (schema `AllowedItemType`): aquel es un enum cerrado usado en `record_validation_schema` para definir qué tipos satisfacen un requerimiento del expediente.
+                            items:
+                              type: string
+                            example: ["ac_mx", "aa_mx"]
+                          file_source:
+                            type: string
+                            description: |
+                              Origen del archivo. Envía `"item"` para referenciar un corte generado por un ítem `doc_splitter` previo; en ese caso, completa `file_source_info` con `item_id` y `support_id`. Detalle en la [guía del divisor de documentos](/producto/guias/doc-splitter).
+                            enum: ["item"]
+                          file_source_info:
+                            type: object
+                            description: |
+                              Referencia al corte del `doc_splitter`. Requerido cuando `file_source: "item"`. Trébol resuelve el sub-PDF internamente; no envíes `bucket`, `key` ni `support_url`.
+                            properties:
+                              item_id:
+                                type: integer
+                                description: "`id` del ítem `doc_splitter` que produjo el corte."
+                                example: 30829
+                              support_id:
+                                type: string
+                                description: |
+                                  Identificador del sub-recurso dentro del ítem referenciado por `item_id`. Para un `doc_splitter` este valor es el `support_id` del corte (formato `ds_<uuid>`) que Trébol expone en `item_value.split_documents[].support_id`.
+                                example: "ds_9f7d3a1c-1c72-4b0f-b8e2-5c9c8b5d4a11"
+                            required:
+                              - item_id
+                              - support_id
             examples:
               Step2Validation:
                 summary: Paso 2 - Validación de documentos
@@ -1264,6 +1323,24 @@ paths:
                         constancia_type: "business"
                       tags:
                         some: "tag value"
+              DocSplitterCreate:
+                summary: Crear un doc_splitter para dividir un PDF con varios documentos
+                value:
+                  items:
+                    - type: "doc_splitter"
+                      options:
+                        file_url: "https://ejemplo.com/expediente-completo.pdf"
+                        allowed_item_types: ["ac_mx", "aa_mx", "pw_mx", "fme_mx"]
+              DocSplitterConsume:
+                summary: Crear un ítem a partir de un corte de un doc_splitter
+                value:
+                  items:
+                    - type: "ac_mx"
+                      options:
+                        file_source: "item"
+                        file_source_info:
+                          item_id: 30829
+                          support_id: "ds_9f7d3a1c-1c72-4b0f-b8e2-5c9c8b5d4a11"
       responses:
         "200":
           description: Items agregados exitosamente a la verificación.
@@ -1306,6 +1383,9 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "404":
           $ref: "#/components/responses/NotFoundError"
+        "409":
+          description: |
+            Conflicto. Causa habitual al referenciar un corte de `doc_splitter` con `file_source: "item"`: `source_item_not_ready` — el ítem fuente aún no está en `complete` sin `item_error`. Ver [Errores HTTP al referenciar un corte](/producto/guias/doc-splitter#errores-http-al-referenciar-un-corte).
         "500":
           $ref: "#/components/responses/InternalServerError"
       security:
@@ -1379,7 +1459,7 @@ paths:
       tags: ["Gestión de Flujos de Cuenta"]
       summary: Crear nuevo flujo
       description: |
-        Crea un nuevo flujo de cuenta. Visita la [guía de desarrollo](/docs/guia-devs/personalizar-widget) para más información.
+        Crea un nuevo flujo de cuenta. Visita la [guía de desarrollo](/guia-devs/crear-verificaciones/via-widget/crear-flujo) para más información.
 
         > **Nota:** El cuerpo de la solicitud está limitado a **200 KB** por nuestro WAF. Si tu configuración (reglas de validación, esquemas de formulario, listas de `flow_items`, etc.) supera este tamaño, la solicitud será rechazada antes de llegar al backend. Revisa las [recomendaciones de la guía](/guia-devs/account-flows) para mantenerte dentro del límite.
       requestBody:
@@ -2385,6 +2465,348 @@ paths:
         "404":
           description: Webhook no encontrado
 
+  /v2/custom-item-types:
+    post:
+      operationId: crearTipoItemPersonalizado
+      tags:
+        - Tipos de Ítem Personalizados
+      summary: Crear un tipo de ítem personalizado
+      description: |
+        Crea un nuevo tipo de ítem personalizado. El `name` debe empezar con `cit_` y no puede contener espacios.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomItemTypeRequest"
+            examples:
+              WithAutoImprove:
+                summary: Con mejora automática (por defecto)
+                value:
+                  name: "cit_contrato_arrendamiento"
+                  user_input: "Este documento es un contrato de arrendamiento inmobiliario firmado ante notario."
+                  friendly_name: "Contrato de arrendamiento"
+              WithoutAutoImprove:
+                summary: Sin mejora automática
+                value:
+                  name: "cit_certificado_estudios"
+                  user_input: "Clasifica este documento como certificado de estudios solo si corresponde a un certificado emitido por una institución educativa."
+                  friendly_name: "Certificado de estudios"
+                  auto_improve: false
+      responses:
+        "201":
+          description: Tipo de ítem personalizado creado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomItemTypeResponse"
+        "400":
+          description: |
+            Solicitud inválida. Posibles causas:
+            - `name`, `user_input` o `friendly_name` faltante o inválido.
+            - `name` no empieza con `cit_` o contiene espacios.
+            - `friendly_name` fuera del rango de 2 a 255 caracteres.
+        "401":
+          description: No autorizado. API key inválida o faltante.
+        "409":
+          description: "Conflicto: `name` ya existe en la cuenta (entre tipos activos y archivados)."
+    get:
+      operationId: listarTiposItemPersonalizados
+      tags:
+        - Tipos de Ítem Personalizados
+      summary: Listar tipos de ítem personalizados
+      description: |
+        Devuelve los tipos no eliminados de la cuenta (activos y archivados) con sus procesos.
+        Ordenados por fecha de creación descendente. Tamaño de página fijo: 10.
+        Las respuestas GET incluyen `user_input` y `json_schema` en cada proceso.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: next
+          in: query
+          schema:
+            type: string
+          description: Token de cursor para obtener la siguiente página.
+      responses:
+        "200":
+          description: Lista de tipos de ítem personalizados obtenida exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomItemTypeReadListResponse"
+        "400":
+          description: Token de cursor inválido.
+        "401":
+          description: No autorizado. API key inválida o faltante.
+
+  /v2/custom-item-types/{id}:
+    get:
+      operationId: obtenerTipoItemPersonalizado
+      tags:
+        - Tipos de Ítem Personalizados
+      summary: Obtener un tipo de ítem personalizado
+      description: |
+        Devuelve un tipo con todos sus procesos. Misma estructura que un elemento individual del listado.
+        Los tipos archivados se devuelven normalmente; solo los eliminados (DELETE) producen 404.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/customItemTypeId"
+      responses:
+        "200":
+          description: Tipo de ítem personalizado obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomItemTypeReadResponse"
+        "401":
+          description: No autorizado. API key inválida o faltante.
+        "404":
+          description: Tipo no encontrado o eliminado.
+    patch:
+      operationId: actualizarTipoItemPersonalizado
+      tags:
+        - Tipos de Ítem Personalizados
+      summary: Actualizar un tipo de ítem personalizado
+      description: |
+        Actualiza campos del tipo. Debes enviar al menos un campo.
+        Si todos los campos ya coinciden con los valores actuales, no se ejecuta ningún UPDATE y `updated_at` no cambia (idempotencia).
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/customItemTypeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCustomItemTypeRequest"
+      responses:
+        "200":
+          description: Tipo actualizado exitosamente. Devuelve solo campos del tipo, sin procesos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomItemTypeUpdateResponse"
+        "400":
+          description: |
+            Solicitud inválida. Posibles causas:
+            - Ningún campo proporcionado, valor inválido o `name` vacío.
+            - `status` con valor no permitido (solo `"active"` o `"archived"`).
+            - `friendly_name` fuera del rango de 2 a 255 caracteres.
+        "401":
+          description: No autorizado. API key inválida o faltante.
+        "404":
+          description: Tipo no encontrado (los tipos archivados sí se pueden actualizar).
+        "409":
+          description: "`name` colisiona con otro tipo activo o archivado de la cuenta."
+    delete:
+      operationId: eliminarTipoItemPersonalizado
+      tags:
+        - Tipos de Ítem Personalizados
+      summary: Eliminar un tipo de ítem personalizado
+      description: |
+        Elimina el tipo de forma permanente junto con todos sus procesos. Es irreversible.
+        Para pausar un tipo sin borrarlo (y poder reactivarlo después), usa PATCH con `status: "archived"` en lugar de DELETE.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/customItemTypeId"
+      responses:
+        "200":
+          description: Tipo eliminado exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "cit_abc123"
+        "401":
+          description: No autorizado. API key inválida o faltante.
+        "404":
+          description: Tipo no encontrado o ya eliminado.
+
+  /v2/custom-item-types/{id}/processes:
+    post:
+      operationId: crearProcesoTipoItemPersonalizado
+      tags:
+        - Tipos de Ítem Personalizados
+      summary: Agregar un proceso a un tipo de ítem personalizado
+      description: |
+        Agrega un proceso de validación o extracción a un tipo existente. Hasta 5 procesos de extracción y 20 de validación por tipo.
+        En procesos de extracción, `auto_improve` debe enviarse como `true`; enviarlo como `false` devuelve 400.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/customItemTypeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomItemTypeProcessRequest"
+            examples:
+              Extraction:
+                summary: Proceso de extracción
+                value:
+                  process_type: "extraction"
+                  process_reference: "extraer_montos"
+                  user_input: "Extrae todos los montos monetarios del contrato, incluyendo renta mensual y depósito."
+                  auto_improve: true
+              Validation:
+                summary: Proceso de validación con failure_policy
+                value:
+                  process_type: "validation"
+                  process_reference: "validar_firmas"
+                  user_input: "Verifica que el contrato contenga las firmas de ambas partes y del notario público."
+                  failure_policy: "hard_stop"
+      responses:
+        "201":
+          description: Proceso creado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomItemTypeProcessResponse"
+        "400":
+          description: |
+            Solicitud inválida. Posibles causas:
+            - Campos requeridos faltantes o inválidos.
+            - `auto_improve: false` en un proceso de extracción.
+            - `failure_policy` enviado en un proceso que no es de validación.
+        "401":
+          description: No autorizado. API key inválida o faltante.
+        "404":
+          description: Tipo padre no encontrado o eliminado.
+        "409":
+          description: |
+            Conflicto. Posibles causas:
+            - `process_reference` ya existe en este tipo.
+            - `user_input` idéntico ya en uso en otro proceso del mismo tipo.
+            - Se alcanzó el límite de procesos del tipo (5 de extracción o 20 de validación).
+
+  /v2/custom-item-types/{id}/processes/{processId}:
+    get:
+      operationId: obtenerProcesoTipoItemPersonalizado
+      tags:
+        - Tipos de Ítem Personalizados
+      summary: Obtener un proceso de un tipo de ítem personalizado
+      description: |
+        Devuelve un proceso con su versión activa, incluyendo `user_input` y `json_schema`.
+        Para que el GET responda correctamente: el tipo padre debe existir (no eliminado ni archivado),
+        el proceso debe existir (no eliminado), y la versión activa debe tener `user_input` no nulo.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/customItemTypeId"
+        - $ref: "#/components/parameters/processId"
+      responses:
+        "200":
+          description: Proceso obtenido exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomItemTypeProcessDetailResponse"
+        "401":
+          description: No autorizado. API key inválida o faltante.
+        "404":
+          description: Tipo padre no encontrado, proceso no encontrado, o versión activa inválida.
+    patch:
+      operationId: actualizarProcesoTipoItemPersonalizado
+      tags:
+        - Tipos de Ítem Personalizados
+      summary: Actualizar un proceso de un tipo de ítem personalizado
+      description: |
+        Actualiza un proceso. Debes enviar al menos un campo. `process_type` y `id` no se pueden cambiar.
+        Cuando el PATCH modifica `user_input`, se crea una nueva versión del proceso que pasa a ser la activa.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/customItemTypeId"
+        - $ref: "#/components/parameters/processId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCustomItemTypeProcessRequest"
+            examples:
+              RotateUserInput:
+                summary: Rotar user_input con mejora automática
+                value:
+                  user_input: "Extrae todos los montos monetarios del contrato: renta mensual, depósito, penalización por mora y total anual."
+                  auto_improve: true
+              DeactivateProcess:
+                summary: Desactivar un proceso
+                value:
+                  is_active: false
+      responses:
+        "200":
+          description: Proceso actualizado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomItemTypeProcessResponse"
+        "400":
+          description: |
+            Solicitud inválida. Posibles causas:
+            - `failure_policy` con valor no nulo en un proceso que no es de validación.
+            - `json_schema` enviado en un proceso que no es de extracción, o con formato inválido.
+        "401":
+          description: No autorizado. API key inválida o faltante.
+        "404":
+          description: Tipo padre o proceso no encontrado.
+        "409":
+          description: |
+            Conflicto. Posibles causas:
+            - `process_reference` colisiona con otro proceso del mismo tipo.
+            - `user_input` idéntico ya usado en otro proceso del mismo tipo.
+            - Se intentó pausar (`is_active: false`) el proceso de clasificación, que no se puede pausar.
+    delete:
+      operationId: eliminarProcesoTipoItemPersonalizado
+      tags:
+        - Tipos de Ítem Personalizados
+      summary: Eliminar un proceso de un tipo de ítem personalizado
+      description: |
+        Elimina permanentemente un proceso de validación o extracción. El proceso de clasificación no se puede eliminar; intentarlo devuelve 409. Para modificar sus instrucciones, usa PATCH sobre el proceso.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/customItemTypeId"
+        - $ref: "#/components/parameters/processId"
+      responses:
+        "200":
+          description: Proceso eliminado exitosamente.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "ccp_ghi789"
+        "401":
+          description: No autorizado. API key inválida o faltante.
+        "404":
+          description: Tipo padre no encontrado, o proceso no encontrado / ya eliminado.
+        "409":
+          description: No se puede eliminar el proceso de clasificación.
+
   /companies/{etiqueta}/details:
     get:
       tags:
@@ -2848,6 +3270,22 @@ components:
       example: "wh_123"
       schema:
         type: string
+    customItemTypeId:
+      name: id
+      in: path
+      required: true
+      description: Identificador único del tipo de ítem personalizado (ej. `cit_abc123`).
+      schema:
+        type: string
+      example: "cit_abc123"
+    processId:
+      name: processId
+      in: path
+      required: true
+      description: Identificador único del proceso (ej. `ccp_def456`).
+      schema:
+        type: string
+      example: "ccp_def456"
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
@@ -4187,7 +4625,7 @@ components:
         custom_user_prompts:
           type: object
           description: |
-            Resultados de extracciones automáticas de la cuenta. Cada clave es el `prompt_id` (identificador editable de la extracción automática); el valor es un objeto JSON acorde al esquema de la versión activa vinculada a ese tipo de documento. Solo aparece cuando hay extracción exitosa para ese ítem.
+            Resultados de extracciones personalizadas y de procesos de extracción de tipos de ítem personalizados. Cada clave es el identificador del procesamiento: el `prompt_id` de la extracción personalizada, o el `process_reference` del proceso de extracción del tipo de ítem personalizado. El valor es un objeto JSON acorde al esquema de la versión activa. Solo aparece cuando hay una extracción exitosa para ese ítem. Más detalle en las guías [Extracciones personalizadas](/producto/guias/extracciones-personalizadas) y [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados).
           additionalProperties: true
           nullable: true
         citations:
@@ -4441,13 +4879,25 @@ components:
           type: string
           nullable: true
           description: |
-            Campo opcional que indica errores públicos relacionados con el procesamiento del ítem. 
-            Valores permitidos:
-            - `password_protected_pdf`: El PDF subido está protegido con contraseña y no puede ser procesado.
-            - `get_input_file_info_failed`: Falló la obtención de información del archivo de entrada.
-          enum:
-            - password_protected_pdf
-            - get_input_file_info_failed
+            Campo opcional que indica errores públicos relacionados con el procesamiento del ítem. Su valor depende del `item_type` que produjo el error.
+
+            **Comunes a ítems documentales**
+            - `password_protected_pdf`: el PDF está protegido con contraseña y no puede procesarse.
+            - `get_input_file_info_failed`: falló la obtención de información del archivo de entrada.
+
+            **Específicos de `doc_splitter`** (ver [guía](/producto/guias/doc-splitter) para el listado completo)
+            - `unsupported_file_type`: el archivo no es un PDF.
+            - `unknown_custom_item_type` / `misconfigured_custom_item_type`: `allowed_item_types` o `client_item_type` referencia un tipo personalizado (`cit_*`) que no existe o no está listo.
+            - `no_splits_returned`: el análisis no identificó ningún documento en el PDF.
+            - `pdf_slice_failed`: no se pudo leer o recortar el PDF (archivo corrupto o error de descarga del original).
+            - `pdf_slice_upload_failed`: se recortaron los sub-PDFs pero falló la subida de al menos uno.
+            - `doc_splitter_request_failed`: falló la llamada al servicio de análisis (OCR o AI). Reintentar suele resolverlo.
+
+            **Específicos de `doc_validation`**
+            - `invalid_document_type`: el documento no corresponde al `client_item_type` esperado.
+            - `ruleset_validation_failed`: al menos una regla del `ruleset` no se cumplió.
+
+            Trata este campo como un `string` opaco: además de los códigos anteriores puede llegar con otros valores para ítems específicos (por ejemplo `prevalidation_failed` en `csf_mx`) o, en errores inesperados, con un mensaje libre en inglés.
         item_internal_status: { type: string, nullable: true }
         item_options:
           type: object
@@ -4484,13 +4934,25 @@ components:
           type: string
           nullable: true
           description: |
-            Campo opcional que indica errores públicos relacionados con el procesamiento del ítem.
-            Valores permitidos:
-            - `password_protected_pdf`: El PDF subido está protegido con contraseña y no puede ser procesado.
-            - `get_input_file_info_failed`: Falló la obtención de información del archivo de entrada.
-          enum:
-            - password_protected_pdf
-            - get_input_file_info_failed
+            Campo opcional que indica errores públicos relacionados con el procesamiento del ítem. Su valor depende del `item_type` que produjo el error.
+
+            **Comunes a ítems documentales**
+            - `password_protected_pdf`: el PDF está protegido con contraseña y no puede procesarse.
+            - `get_input_file_info_failed`: falló la obtención de información del archivo de entrada.
+
+            **Específicos de `doc_splitter`** (ver [guía](/producto/guias/doc-splitter) para el listado completo)
+            - `unsupported_file_type`: el archivo no es un PDF.
+            - `unknown_custom_item_type` / `misconfigured_custom_item_type`: `allowed_item_types` o `client_item_type` referencia un tipo personalizado (`cit_*`) que no existe o no está listo.
+            - `no_splits_returned`: el análisis no identificó ningún documento en el PDF.
+            - `pdf_slice_failed`: no se pudo leer o recortar el PDF (archivo corrupto o error de descarga del original).
+            - `pdf_slice_upload_failed`: se recortaron los sub-PDFs pero falló la subida de al menos uno.
+            - `doc_splitter_request_failed`: falló la llamada al servicio de análisis (OCR o AI). Reintentar suele resolverlo.
+
+            **Específicos de `doc_validation`**
+            - `invalid_document_type`: el documento no corresponde al `client_item_type` esperado.
+            - `ruleset_validation_failed`: al menos una regla del `ruleset` no se cumplió.
+
+            Trata este campo como un `string` opaco: además de los códigos anteriores puede llegar con otros valores para ítems específicos (por ejemplo `prevalidation_failed` en `csf_mx`) o, en errores inesperados, con un mensaje libre en inglés.
         item_internal_status: { type: string, nullable: true }
         item_options:
           type: object
@@ -5305,9 +5767,9 @@ components:
                 description: El tipo de documento o ítem a verificar.
               options:
                 type: object
-                required:
-                  - file_url
-                description: Opciones adicionales para el ítem, como el alcance de las personas involucradas.
+                description: |
+                  Opciones adicionales para el ítem. Para el origen del archivo envía `file_url` (URL descargable); si lo omites, Trébol devuelve una `upload_url` presignada (ver [flujo de carga directa](/guia-devs/crear-verificaciones/via-api/carga-directa)). `doc_splitter` es la excepción: requiere `file_url` en la creación.
+                  Para referenciar un corte de un `doc_splitter` previo con `file_source: "item"` + `file_source_info`, usa [`PUT /verifications/{id}/add-items`](/api-reference/agregar-items-a-una-verificacion/agregar-items-a-una-verificación-existente) sobre una verificación existente: en `POST /verifications` no hay `doc_splitter` previo al que apuntar.
                 properties:
                   file_url:
                     type: string
@@ -5321,6 +5783,14 @@ components:
                       example: "powers"
                   client_item_type:
                     $ref: "#/components/schemas/ClientItemType"
+                  allowed_item_types:
+                    type: array
+                    description: |
+                      Solo para `doc_splitter`. Restringe los tipos que el splitter puede identificar. Acepta tipos built-in (por ejemplo `ac_mx`, `aa_mx`) y nombres de tipos de ítem personalizados (`cit_...`). Si se omite o está vacío, se usa el catálogo base completo.
+                      **No confundir con** el `allowed_item_types` del `RequirementDefinition` (schema `AllowedItemType`): aquel es un enum cerrado usado en `record_validation_schema` para definir qué tipos satisfacen un requerimiento del expediente.
+                    items:
+                      type: string
+                    example: ["ac_mx", "aa_mx"]
                   state_code:
                     type: string
                     description: >
@@ -5553,7 +6023,7 @@ components:
                       - "co_form"
                     description:
                       Especifica el esquema de formulario que se debe usar para la sección de UBOs.
-                      Para más información sobre los esquemas de formulario, consulta la sección [Personalizar Widget](/guia-devs/personalizar-widget#1-configurando-la-experiencia-flow_items).
+                      Para más información sobre los esquemas de formulario, consulta la sección [Items del flujo](/guia-devs/crear-verificaciones/via-widget/items#forms).
                       **Aplicara solo para items de tipo `ubos` y es opcional**.
                     example: "mx_form"
                   ubos_schema_id:
@@ -6198,3 +6668,263 @@ components:
                 type: string
                 description: ID del rol. Se obtiene del campo `id` en los roles dentro del array `key_people` del endpoint `/v2/verifications/{id}/people`.
                 example: "role_123"
+    CreateCustomItemTypeRequest:
+      type: object
+      required:
+        - name
+        - user_input
+        - friendly_name
+      properties:
+        name:
+          type: string
+          description: "Clave del tipo de documento. Debe empezar con `cit_` y no puede contener espacios (ej. `cit_contrato_arrendamiento`). Única por cuenta."
+          example: "cit_contrato_arrendamiento"
+        user_input:
+          type: string
+          description: Instrucciones para identificar este tipo de documento.
+          example: "Este documento es un contrato de arrendamiento inmobiliario firmado ante notario."
+        friendly_name:
+          type: string
+          description: Nombre legible para interfaces. Entre 2 y 255 caracteres.
+          example: "Contrato de arrendamiento"
+        auto_improve:
+          type: boolean
+          default: true
+          description: Cuando es `false`, Trébol no ejecuta mejora automática y conserva las instrucciones tal cual.
+    UpdateCustomItemTypeRequest:
+      type: object
+      description: Debes enviar al menos un campo (`name`, `friendly_name` o `status`).
+      properties:
+        name:
+          type: string
+          description: Renombra el tipo. No puede contener espacios. Única por cuenta.
+        friendly_name:
+          type: string
+          description: Actualiza el nombre legible. Entre 2 y 255 caracteres.
+        status:
+          type: string
+          enum: ["active", "archived"]
+          description: "`archived`: pausa el tipo, sigue en el listado y puede reactivarse. `active`: reactiva un tipo archivado."
+    CustomItemTypeProcess:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identificador único del proceso generado por Trébol.
+          example: "ccp_def456"
+        process_reference:
+          type: string
+          description: Etiqueta del proceso asignada por el usuario.
+          example: "extraer_montos"
+        process_type:
+          type: string
+          enum: ["classification", "validation", "extraction"]
+          description: Tipo de proceso.
+        is_active:
+          type: boolean
+          description: Indica si el proceso está activo.
+          example: true
+        failure_policy:
+          type: string
+          nullable: true
+          enum: ["warning", "hard_stop", null]
+          description: "Política de fallo para validaciones. `warning`: el ítem se pausa hasta que se revise el resultado. `hard_stop`: si la regla no se cumple, el ítem se da por finalizado. `null`: el ítem continúa procesándose aunque la regla falle. Para clasificación y extracción siempre es `null`."
+        active_version_id:
+          type: integer
+          nullable: true
+          description: ID de la versión activa del proceso.
+          example: 42
+        version_number:
+          type: integer
+          description: Número secuencial de la versión activa.
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creación del proceso.
+        updated_at:
+          type: string
+          format: date-time
+          description: Fecha de última actualización del proceso.
+    CustomItemTypeProcessWithContent:
+      allOf:
+        - $ref: "#/components/schemas/CustomItemTypeProcess"
+        - type: object
+          properties:
+            user_input:
+              type: string
+              description: Instrucciones escritas por el usuario para este proceso.
+              example: "Este documento es un contrato de arrendamiento..."
+            json_schema:
+              type: object
+              nullable: true
+              description: Esquema JSON de salida para procesos de extracción. NULL para clasificación y validación.
+    CustomItemTypeData:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identificador único del tipo generado por Trébol.
+          example: "cit_abc123"
+        name:
+          type: string
+          description: Clave del tipo de documento (empieza con `cit_`).
+          example: "cit_contrato_arrendamiento"
+        friendly_name:
+          type: string
+          description: Nombre legible para interfaces.
+          example: "Contrato de arrendamiento"
+        status:
+          type: string
+          enum: ["active", "archived"]
+          description: Estado del tipo.
+          example: "active"
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creación.
+        updated_at:
+          type: string
+          format: date-time
+          description: Fecha de última actualización.
+        processes:
+          type: array
+          description: Procesos vinculados al tipo.
+          items:
+            $ref: "#/components/schemas/CustomItemTypeProcess"
+    CustomItemTypeReadData:
+      description: Tipo de ítem personalizado con procesos completos (incluye user_input y json_schema). Usado en respuestas GET.
+      allOf:
+        - $ref: "#/components/schemas/CustomItemTypeData"
+        - type: object
+          properties:
+            processes:
+              type: array
+              description: Procesos vinculados al tipo con contenido completo (user_input, json_schema).
+              items:
+                $ref: "#/components/schemas/CustomItemTypeProcessWithContent"
+    CustomItemTypeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/CustomItemTypeData"
+    CustomItemTypeUpdateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          description: Tipo actualizado (sin procesos).
+          properties:
+            id:
+              type: string
+              example: "cit_abc123"
+            name:
+              type: string
+              example: "cit_contrato_arrendamiento_v2"
+            friendly_name:
+              type: string
+            status:
+              type: string
+              enum: ["active", "archived"]
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+    CustomItemTypeReadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/CustomItemTypeReadData"
+    CustomItemTypeReadListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomItemTypeReadData"
+        next:
+          type: string
+          nullable: true
+          description: Token de cursor para la siguiente página. `null` o ausente si no hay más resultados.
+    CustomItemTypeProcessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/CustomItemTypeProcess"
+    CustomItemTypeProcessDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/CustomItemTypeProcessWithContent"
+    CreateCustomItemTypeProcessRequest:
+      type: object
+      required:
+        - process_type
+        - process_reference
+        - user_input
+      properties:
+        process_type:
+          type: string
+          enum: ["validation", "extraction"]
+          description: "Tipo de proceso a crear. Hasta 5 procesos de extracción y 20 de validación por tipo."
+        process_reference:
+          type: string
+          description: Etiqueta del proceso. Única dentro del mismo tipo.
+          example: "extraer_montos"
+        user_input:
+          type: string
+          description: Instrucciones escritas por el usuario para este proceso.
+          example: "Extrae todos los montos monetarios del contrato."
+        auto_improve:
+          type: boolean
+          description: "Requerido para procesos de extracción y debe enviarse como `true`. Enviar `false` en un proceso de extracción devuelve error 400, porque el `json_schema` solo puede generarse mediante mejora automática en la creación. Para procesos de validación, es opcional (por defecto `true`)."
+        failure_policy:
+          type: string
+          nullable: true
+          enum: ["warning", "hard_stop", null]
+          description: "Solo para validación. `warning`: el ítem se pausa hasta que se revise el resultado. `hard_stop`: si la regla no se cumple, el ítem se da por finalizado. `null`: el ítem continúa procesándose aunque la regla falle. Se rechaza si se envía en otro tipo de proceso."
+    UpdateCustomItemTypeProcessRequest:
+      type: object
+      description: Debes enviar al menos un campo. `process_type` y `id` no se pueden cambiar.
+      properties:
+        process_reference:
+          type: string
+          description: Renombra la etiqueta. Única dentro del mismo tipo.
+        is_active:
+          type: boolean
+          description: Activa o pausa el proceso sin eliminarlo. El proceso de clasificación no se puede pausar.
+        user_input:
+          type: string
+          description: Nuevas instrucciones. Al cambiarlas se crea una nueva versión del proceso, que pasa a ser la activa.
+        json_schema:
+          type: object
+          description: "Solo para procesos de extracción. Define el esquema JSON de salida. Enviarlo crea una nueva versión del proceso. Enviarlo en un proceso que no es de extracción devuelve 400."
+        auto_improve:
+          type: boolean
+          default: true
+          description: Solo aplica cuando `user_input` cambia. Si es `false`, las instrucciones mejoradas se rellenan con el `user_input` tal cual.
+        failure_policy:
+          type: string
+          nullable: true
+          enum: ["warning", "hard_stop", null]
+          description: "Solo para validación. `warning`: el ítem se pausa hasta que se revise el resultado. `hard_stop`: si la regla no se cumple, el ítem se da por finalizado. `null`: el ítem continúa procesándose aunque la regla falle."

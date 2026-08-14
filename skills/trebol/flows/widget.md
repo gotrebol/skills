@@ -195,7 +195,11 @@ Para la lista completa de items soportados (incluyendo aml_validation, signatory
 
 ## Personalización (branding)
 
-Configura colores, logo, textos y políticas desde [app.gotrebol.com](https://app.gotrebol.com) → Personalización. No requiere código.
+Configura colores, logo y políticas desde [app.gotrebol.com](https://app.gotrebol.com) → Personalización. No requiere código.
+
+En la misma pantalla se configura el **dominio personalizado de onboarding**: se agrega el dominio, se crea el registro DNS que muestra la interfaz (CNAME a `cname.vercel-dns.com` para subdominios; A `76.76.21.21` para dominio raíz) y se verifica.
+
+Con el dominio verificado, las ligas de inicio de onboarding (correos de invitación y aplicativo web) quedan `https://<dominio>/<id_slug>` — el `id_slug` del account-flow; también son construibles a mano. El `onboarding_url` que devuelve el API conserva su formato de liga directa a la verificación (con su token de acceso); solo cambia el host, incluso al consultar verificaciones creadas antes de verificar el dominio. Sin dominio configurado, o con el dominio pendiente, todo usa el dominio por defecto de Trébol. El widget embebido (`<trebol-widget>`) sigue cargando desde el dominio por defecto.
 
 ## Estados del expediente
 

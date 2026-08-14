@@ -56,9 +56,12 @@ Todos los items de extracción terminaron, pero la verificación aún no está m
 Cambió el estado documental (`documents_status`) de la verificación: `pending_upload` → `partial_upload` → `pending_external` → `full_upload` (puede retroceder tras una reapertura). El payload incluye `documents_status`, `previous_documents_status` y `updated_at`. Para saber cuándo el prospecto completó su expediente, filtra por `documents_status: "full_upload"`. **Nota:** este evento no incluye `account_name`.
 
 ### `verification_item.v2.completed`
-Un item específico completó su procesamiento. Contiene `item_error` si hubo problema:
-- `password_protected_pdf` — PDF con contraseña, no se pudo procesar
-- `get_input_file_info_failed` — falló al leer el archivo
+Un item específico completó su procesamiento. Contiene `item_error` si hubo problema. Códigos comunes:
+- **Documentales**: `password_protected_pdf` (PDF con contraseña), `get_input_file_info_failed` (falló al leer el archivo).
+- **`doc_splitter`**: `unsupported_file_type`, `unknown_custom_item_type`, `misconfigured_custom_item_type`, `no_splits_returned`, `pdf_slice_failed`, `pdf_slice_upload_failed`, `doc_splitter_request_failed` (ver detalle en la guía de `doc_splitter`).
+- **`doc_validation`**: `invalid_document_type`, `ruleset_validation_failed`.
+
+Trata `item_error` como un `string` opaco: pueden llegar otros códigos específicos por `item_type` (por ejemplo `prevalidation_failed` en `csf_mx`).
 
 ### `verification_item.v2.internal_status_changed`
 Cambio de estado interno de un item.
