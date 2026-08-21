@@ -2644,7 +2644,8 @@ paths:
       summary: Agregar un proceso a un tipo de ítem personalizado
       description: |
         Agrega un proceso de validación o extracción a un tipo existente. Hasta 5 procesos de extracción y 20 de validación por tipo.
-        En procesos de extracción, `auto_improve` debe enviarse como `true`; enviarlo como `false` devuelve 400.
+        En procesos de extracción sin `json_schema`, `auto_improve` debe enviarse como `true`; enviarlo como `false` devuelve 400.
+        Si se envía `json_schema`, `auto_improve` se establece en `false` automáticamente; enviarlo como `true` devuelve 400.
       security:
         - ApiKeyAuth: []
       parameters:
@@ -2657,12 +2658,38 @@ paths:
               $ref: "#/components/schemas/CreateCustomItemTypeProcessRequest"
             examples:
               Extraction:
-                summary: Proceso de extracción
+                summary: Proceso de extracción con auto_improve
                 value:
                   process_type: "extraction"
                   process_reference: "extraer_montos"
                   user_input: "Extrae todos los montos monetarios del contrato, incluyendo renta mensual y depósito."
                   auto_improve: true
+              ExtractionWithSchema:
+                summary: Proceso de extracción con json_schema propio
+                value:
+                  process_type: "extraction"
+                  process_reference: "extraer_personas"
+                  user_input: "Extrae todas las personas mencionadas en el documento con su nombre completo y rol."
+                  json_schema:
+                    type: "object"
+                    required:
+                      - "persons"
+                    properties:
+                      persons:
+                        type: "array"
+                        description: "Lista de todas las personas mencionadas en el documento."
+                        items:
+                          type: "object"
+                          required:
+                            - "name"
+                            - "role"
+                          properties:
+                            name:
+                              type: "string"
+                              description: "Nombre completo de la persona mencionada en el documento."
+                            role:
+                              type: ["string", "null"]
+                              description: "Rol, cargo o calidad con la que la persona aparece en el documento. Usa null si no se especifica."
               Validation:
                 summary: Proceso de validación con failure_policy
                 value:
@@ -2681,7 +2708,10 @@ paths:
           description: |
             Solicitud inválida. Posibles causas:
             - Campos requeridos faltantes o inválidos.
-            - `auto_improve: false` en un proceso de extracción.
+            - `auto_improve: false` en extracción sin `json_schema`.
+            - `auto_improve: true` en extracción con `json_schema`.
+            - `json_schema` enviado en un proceso que no es de extracción.
+            - `json_schema` con formato inválido.
             - `failure_policy` enviado en un proceso que no es de validación.
         "401":
           description: No autorizado. API key inválida o faltante.
@@ -2761,6 +2791,7 @@ paths:
             Solicitud inválida. Posibles causas:
             - `failure_policy` con valor no nulo en un proceso que no es de validación.
             - `json_schema` enviado en un proceso que no es de extracción, o con formato inválido.
+            - `auto_improve: true` enviado junto con `json_schema`.
         "401":
           description: No autorizado. API key inválida o faltante.
         "404":
@@ -6895,9 +6926,13 @@ components:
           type: string
           description: Instrucciones escritas por el usuario para este proceso.
           example: "Extrae todos los montos monetarios del contrato."
+        json_schema:
+          type: object
+          description: "Solo para procesos de extracción. Define el esquema JSON de salida. Cuando se envía, `auto_improve` se establece en `false` automáticamente; enviar `auto_improve: true` junto con `json_schema` devuelve error 400. La raíz debe ser `type: object` con `properties`. Usa `type: [\"<tipo>\", \"null\"]` para campos anulables. Consulta la [estructura del json_schema](/producto/guias/tipos-de-item-personalizados#estructura-del-json_schema) para el formato requerido y ejemplos."
         auto_improve:
           type: boolean
-          description: "Requerido para procesos de extracción y debe enviarse como `true`. Enviar `false` en un proceso de extracción devuelve error 400, porque el `json_schema` solo puede generarse mediante mejora automática en la creación. Para procesos de validación, es opcional (por defecto `true`)."
+          default: true
+          description: "Para extracción sin `json_schema`, debe enviarse como `true` (o se omite; por defecto `true`). Enviar `false` sin `json_schema` devuelve error 400. Cuando se envía `json_schema`, `auto_improve` se establece en `false` automáticamente; enviar `true` devuelve error 400. Para validación, es opcional (por defecto `true`)."
         failure_policy:
           type: string
           nullable: true
@@ -6918,11 +6953,11 @@ components:
           description: Nuevas instrucciones. Al cambiarlas se crea una nueva versión del proceso, que pasa a ser la activa.
         json_schema:
           type: object
-          description: "Solo para procesos de extracción. Define el esquema JSON de salida. Enviarlo crea una nueva versión del proceso. Enviarlo en un proceso que no es de extracción devuelve 400."
+          description: "Solo para procesos de extracción. Define el esquema JSON de salida. Enviarlo crea una nueva versión del proceso. Cuando se envía, `auto_improve` se establece en `false` automáticamente; enviar `auto_improve: true` junto con `json_schema` devuelve error 400. Enviarlo en un proceso que no es de extracción devuelve 400. Consulta la [estructura del json_schema](/producto/guias/tipos-de-item-personalizados#estructura-del-json_schema) para el formato requerido y ejemplos."
         auto_improve:
           type: boolean
           default: true
-          description: Solo aplica cuando `user_input` cambia. Si es `false`, las instrucciones mejoradas se rellenan con el `user_input` tal cual.
+          description: "Solo aplica cuando `user_input` cambia. Si es `false`, las instrucciones mejoradas se rellenan con el `user_input` tal cual. Cuando se envía `json_schema`, `auto_improve` se establece en `false` automáticamente; enviar `true` devuelve error 400."
         failure_policy:
           type: string
           nullable: true

@@ -4,6 +4,14 @@ Historial de cambios al skill de Trébol distribuido vía [skills.sh](https://ww
 
 Los integradores pueden preguntarle a su asistente con IA *"¿qué cambió en la última versión del skill de Trébol?"* y recibir un resumen consultando este archivo.
 
+## 2026-08-12
+
+- **`json_schema` en creación de procesos de extracción** (`POST /v2/custom-item-types/{id}/processes`): ahora se puede enviar `json_schema` al crear un proceso de extracción. Cuando se envía, `auto_improve` se establece en `false` automáticamente (enviar `auto_improve: true` junto con `json_schema` devuelve 400). Si no se envía `json_schema`, el comportamiento anterior se mantiene (`auto_improve` debe ser `true`). Misma regla aplica al actualizar (`PATCH`) un proceso con `json_schema`. La guía incluye nueva sección "Estructura del `json_schema`" con formato requerido, campos anulables (`"type": ["string", "null"]`) y tres ejemplos (plano, con arrays anidados, y mixto). Impacto en integraciones:
+  - **Creación**: `POST` acepta `json_schema` opcional. Con `json_schema` → `auto_improve` forzado a `false`. Sin `json_schema` → `auto_improve` debe ser `true`.
+  - **Actualización**: `PATCH` con `json_schema` → `auto_improve` forzado a `false`.
+  - **Sin espera asíncrona**: al proveer `json_schema` propio no hay que esperar a que la mejora automática genere el esquema; el proceso queda listo de inmediato.
+  - Spec y copia del skill sincronizadas con los nuevos ejemplos y errores.
+
 ## 2026-07-24
 
 - **Corrección del nombre del campo en las respuestas de `doc_splitter`**: los cortes se leen bajo `item_value.split_documents` (con `has_multiple_documents` a la par), NO bajo `value.split_documents`. El schema `PublicVerificationItem` define `item_value` como el contenedor del payload por tipo de ítem (confirmado en `../business-verification/src/lib/verifications/getById.ts:234,873`). La guía, el ResponseExample y la nota de novedades quedaron corregidos.
