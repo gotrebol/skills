@@ -161,7 +161,13 @@ paths:
                     example: "documents-v2"
                   documents_status:
                     type: string
-                    enum: [pending_upload, partial_upload, pending_external, full_upload]
+                    enum:
+                      [
+                        pending_upload,
+                        partial_upload,
+                        pending_external,
+                        full_upload,
+                      ]
                     description: Estado de la colección de documentos.
                     example: "pending_upload"
                   onboarding_url:
@@ -549,6 +555,37 @@ paths:
                     tags:
                       uploaded-from: "webapp-creation-business"
                     original_file_url: "https://files.staging.gotrebol.com/66b4b55e-0e4f-42ec-9727-2bff88965562/26600_original_file.pdf?response-content-type=application%2Fpdf&response-content-disposition=inline&Expires=1758902113&Key-Pair-Id=K2O2X5EIJK95L0&Signature=X0if4WzR23I0s61h~gW2s-92nGNXhQBHZp9bxl42HqMSMO1VYpybLmhtygyJfx5OvZL4NSoYHTYfH7-yZv02lRwtNSI~xYFAVVxPPFROzwblK66LwymsQWAE0xvwtI98eWQKBWop3rgHADqrUGIm1RBa2qm3Ydlj2HVtWmsrVn2OTMtnIuoyI50Z8iYmx6hcPLul6SazK4h18MMRRi5xnsa2shrGs36rLyRFlnDBObRFJBKmkH4Dn27PuCVrXQRHQwRUIyRCQAiLGSuVKDp~iWZqTld6qgDQOkq-0A54dv0r8O6hYZ5fPyX1ufeIJeaKaGKjKC9qAiOWl~wQe6-w9g__"
+                CustomItemType:
+                  summary: Item de un tipo de ítem personalizado (cit_*)
+                  value:
+                    id: 31544
+                    item_order: 1
+                    item_status: "complete"
+                    item_type: "cit_contrato_arrendamiento"
+                    item_internal_status: "extraction_finished"
+                    item_error: null
+                    item_value:
+                      current_stage: "extraction"
+                      pipeline:
+                        validation:
+                          - process_reference: "validar_firmas"
+                            executed: true
+                            execution_result: true
+                            value:
+                              identifier: "activeVersionId_87"
+                              validation_result: true
+                              explanation: "El contrato está firmado por ambas partes."
+                        extraction:
+                          - process_reference: "extraer_datos_contrato"
+                            executed: true
+                            execution_result: "success"
+                            value:
+                              landlord_name: "María López García"
+                              tenant_name: "Carlos Ramírez Soto"
+                              monthly_rent: 15000
+                              start_date: "2026-02-01"
+                              contract_duration: "12 meses"
+                    original_file_url: "https://files.gotrebol.com/66b4b55e-0e4f-42ec-9727-2bff88965562/31544_original_file.pdf"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "404":
@@ -693,7 +730,7 @@ paths:
         - `sources`: Fuentes de información (items) que alimentan la verificación
         - `external-lookups`: Evidencia de auditoría de las consultas a fuentes públicas (SAT, RENAPO, INE, SIGER). Ver [Consultas públicas externas](/guia-devs/monitorear/consultas-publicas-externas).
 
-        **Fuentes (`sources`) y extracciones personalizadas:** cuando la cuenta tiene una extracción personalizada activa o un tipo de ítem personalizado con procesos de extracción, cada elemento en `data.sources` puede incluir `custom_user_prompts`: un objeto cuyas claves son el identificador del procesamiento (`prompt_id` para extracciones personalizadas o `process_reference` para tipos de ítem personalizados) y cuyos valores son el JSON extraído según el esquema de la versión en uso. Más detalle en las guías [Extracciones personalizadas](/producto/guias/extracciones-personalizadas) y [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados).
+        **Fuentes (`sources`) y extracciones personalizadas:** cuando la cuenta tiene una extracción personalizada activa para el tipo de ítem correspondiente, cada elemento en `data.sources` puede incluir una llave `cp_<prompt_id>` por cada extracción con resultado, donde `prompt_id` es el identificador editable de la extracción personalizada y el valor es el JSON extraído según el esquema de la versión en uso. Más detalle en la guía [Extracciones personalizadas](/producto/guias/extracciones-personalizadas). Los ítems de tipos de ítem personalizados (`cit_*`) no exponen aquí sus resultados: se leen desde el ítem, en `item_value.pipeline`. Ver [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados#donde-salen-los-resultados).
 
         **Coordenadas de citas:** agrega `?with_citations=true` para obtener URLs firmadas al artifact de coordenadas. Según la sección: `people` y `shareholders` añaden `data.citations.url`; `sources` añade `citations.url` en cada item de tipo acta del array `data.sources`. Detalle completo en [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
 
@@ -722,7 +759,15 @@ paths:
           description: Sección solicitada
           schema:
             type: string
-            enum: [details, shareholders, people, documents, sources, external-lookups]
+            enum:
+              [
+                details,
+                shareholders,
+                people,
+                documents,
+                sources,
+                external-lookups,
+              ]
         - name: with_citations
           in: query
           required: false
@@ -791,7 +836,7 @@ paths:
         - `sources`: Fuentes de información (items) que alimentan la verificación
         - `external-lookups`: Evidencia de auditoría de las consultas a fuentes públicas (SAT, RENAPO, INE, SIGER). Ver [Consultas públicas externas](/guia-devs/monitorear/consultas-publicas-externas).
 
-        **Fuentes (`sources`) y extracciones personalizadas:** cuando la cuenta tiene una extracción personalizada activa o un tipo de ítem personalizado con procesos de extracción, cada elemento en `data.sources` puede incluir `custom_user_prompts`: un objeto cuyas claves son el identificador del procesamiento (`prompt_id` para extracciones personalizadas o `process_reference` para tipos de ítem personalizados) y cuyos valores son el JSON extraído según el esquema de la versión en uso. Más detalle en las guías [Extracciones personalizadas](/producto/guias/extracciones-personalizadas) y [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados).
+        **Fuentes (`sources`) y extracciones personalizadas:** cuando la cuenta tiene una extracción personalizada activa para el tipo de ítem correspondiente, cada elemento en `data.sources` puede incluir una llave `cp_<prompt_id>` por cada extracción con resultado, donde `prompt_id` es el identificador editable de la extracción personalizada y el valor es el JSON extraído según el esquema de la versión en uso. Más detalle en la guía [Extracciones personalizadas](/producto/guias/extracciones-personalizadas). Los ítems de tipos de ítem personalizados (`cit_*`) no exponen aquí sus resultados: se leen desde el ítem, en `item_value.pipeline`. Ver [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados#donde-salen-los-resultados).
 
         **Coordenadas de citas:** agrega `?with_citations=true` para obtener URLs firmadas al artifact de coordenadas. Según la sección: `people` y `shareholders` añaden `data.citations.url`; `sources` añade `citations.url` en cada item de tipo acta del array `data.sources`. Detalle completo en [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
 
@@ -820,7 +865,15 @@ paths:
           description: Sección solicitada
           schema:
             type: string
-            enum: [details, shareholders, people, documents, sources, external-lookups]
+            enum:
+              [
+                details,
+                shareholders,
+                people,
+                documents,
+                sources,
+                external-lookups,
+              ]
         - name: with_citations
           in: query
           required: false
@@ -1330,7 +1383,8 @@ paths:
                     - type: "doc_splitter"
                       options:
                         file_url: "https://ejemplo.com/expediente-completo.pdf"
-                        allowed_item_types: ["ac_mx", "aa_mx", "pw_mx", "fme_mx"]
+                        allowed_item_types:
+                          ["ac_mx", "aa_mx", "pw_mx", "fme_mx"]
               DocSplitterConsume:
                 summary: Crear un ítem a partir de un corte de un doc_splitter
                 value:
@@ -3950,9 +4004,8 @@ components:
               folio_inscription_date: "2024-10-20"
               notary_state: "CDMX"
               notary_city: "CDMX"
-              custom_user_prompts:
-                mi_procesamiento_acta:
-                  campo_ejemplo: "valor extraído"
+              cp_mi_procesamiento_acta:
+                campo_ejemplo: "valor extraído"
         meta:
           section: "sources"
           verification:
@@ -4073,7 +4126,15 @@ components:
       properties:
         section:
           type: string
-          enum: [details, shareholders, people, documents, sources, external-lookups]
+          enum:
+            [
+              details,
+              shareholders,
+              people,
+              documents,
+              sources,
+              external-lookups,
+            ]
         verification:
           $ref: "#/components/schemas/V2VerificationMeta"
 
@@ -4615,6 +4676,11 @@ components:
 
     V2CompanySource:
       type: object
+      description: |
+        Además de los campos listados, cada fuente puede incluir una llave por cada extracción personalizada con resultado para ese ítem, con la forma `cp_<prompt_id>`, donde `prompt_id` es el identificador editable de la extracción personalizada. El valor es un objeto JSON acorde al esquema de la versión que produjo el resultado. Ver [Extracciones personalizadas](/producto/guias/extracciones-personalizadas).
+
+        Los tipos de ítem personalizados no usan este mecanismo. Un ítem `cit_*` aparece en `sources` con sus campos comunes, pero sin llaves `cp_` y sin `item_value`: sus resultados de extracción y validación se leen desde el ítem, en `item_value.pipeline`. Ver [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados#donde-salen-los-resultados).
+      additionalProperties: true
       properties:
         id: { type: number }
         type: { type: string }
@@ -4653,12 +4719,6 @@ components:
         notary_city: { type: string, nullable: true }
         assembly_minute:
           { type: object, additionalProperties: true, nullable: true }
-        custom_user_prompts:
-          type: object
-          description: |
-            Resultados de extracciones personalizadas y de procesos de extracción de tipos de ítem personalizados. Cada clave es el identificador del procesamiento: el `prompt_id` de la extracción personalizada, o el `process_reference` del proceso de extracción del tipo de ítem personalizado. El valor es un objeto JSON acorde al esquema de la versión activa. Solo aparece cuando hay una extracción exitosa para ese ítem. Más detalle en las guías [Extracciones personalizadas](/producto/guias/extracciones-personalizadas) y [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados).
-          additionalProperties: true
-          nullable: true
         citations:
           type: object
           description: |
@@ -4728,7 +4788,12 @@ components:
           description: >
             URL del artefacto. Para `screenshot` y `pdf` es una URL firmada de corta
             duración (~1 hora); para `external_link` es la URL pública de la dependencia.
-        label: { type: string, nullable: true, description: "Descripción legible del artefacto." }
+        label:
+          {
+            type: string,
+            nullable: true,
+            description: "Descripción legible del artefacto.",
+          }
         generated_at:
           type: string
           nullable: true
@@ -4749,13 +4814,29 @@ components:
         lookup_type:
           type: string
           description: Tipo de consulta realizada.
-          enum: [signature_certificates, csf_qr_validation, curp, lista_nominal, commercial_registry]
-        agency_name: { type: string, description: "Nombre completo de la dependencia consultada." }
+          enum:
+            [
+              signature_certificates,
+              csf_qr_validation,
+              curp,
+              lista_nominal,
+              commercial_registry,
+            ]
+        agency_name:
+          {
+            type: string,
+            description: "Nombre completo de la dependencia consultada.",
+          }
         subject_type:
           type: string
           description: Sobre quién se realizó la consulta.
           enum: [business, person]
-        subject_name: { type: string, nullable: true, description: "Nombre del sujeto consultado." }
+        subject_name:
+          {
+            type: string,
+            nullable: true,
+            description: "Nombre del sujeto consultado.",
+          }
         subject_identifier:
           type: string
           nullable: true
@@ -4896,6 +4977,106 @@ components:
           type: string
           enum: [public_verification, verification]
 
+    CustomItemTypeItemValue:
+      type: object
+      description: |
+        `item_value` de un ítem cuyo `item_type` es un tipo de ítem personalizado (prefijo `cit_`).
+
+        No lleva llaves `cp_<prompt_id>`: ese prefijo es exclusivo de las [extracciones personalizadas](/producto/guias/extracciones-personalizadas) sobre tipos de documento estándar. Aquí los resultados viven en `pipeline`, con un paso por cada proceso configurado en el tipo, identificado por su `process_reference`. Ver [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados#donde-salen-los-resultados).
+      properties:
+        pipeline:
+          type: object
+          description: Resultado de cada proceso del tipo para este ítem.
+          properties:
+            validation:
+              type: array
+              description: Un paso por regla de validación del tipo. Array vacío si el tipo no tiene validaciones.
+              items:
+                $ref: "#/components/schemas/CustomItemTypeValidationStep"
+            extraction:
+              type: array
+              description: Un paso por proceso de extracción del tipo. Array vacío si el tipo no tiene extracciones.
+              items:
+                $ref: "#/components/schemas/CustomItemTypeExtractionStep"
+        current_stage:
+          type: string
+          description: |
+            Etapa del pipeline interno en la que quedó el ítem. Es informativa y su lista de valores no es estable: para saber si el ítem terminó usa `item_status` junto con `item_error`.
+          example: "extraction"
+
+    CustomItemTypeExtractionStep:
+      type: object
+      description: Resultado de un proceso de extracción del tipo para este ítem.
+      properties:
+        process_reference:
+          type: string
+          description: Etiqueta del proceso de extracción, la misma que definiste al crearlo. Única dentro del tipo.
+          example: "extraer_datos_contrato"
+        executed:
+          type: boolean
+          description: "`true` cuando el proceso llegó a ejecutarse para este ítem."
+          example: true
+        execution_result:
+          type: string
+          enum: ["success", "error"]
+          description: Resultado de la ejecución. Solo aparece cuando `executed` es `true`.
+          example: "success"
+        value:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: |
+            JSON extraído. Sus claves son las `properties` del `json_schema` de la versión que se ejecutó. Es `null` cuando el proceso no se ejecutó o terminó en error.
+
+            Trébol elimina de este objeto, en todos los niveles, las claves que empiezan por `paragraphs_` o `parrafos_` (trazas internas de citas).
+
+    CustomItemTypeValidationStep:
+      type: object
+      description: Resultado de una regla de validación del tipo para este ítem.
+      properties:
+        process_reference:
+          type: string
+          description: Etiqueta de la regla de validación, la misma que definiste al crearla. Única dentro del tipo.
+          example: "validar_firmas"
+        executed:
+          type: boolean
+          description: "`true` cuando la regla llegó a evaluarse para este ítem."
+          example: true
+        execution_result:
+          type: boolean
+          description: "`true` si la regla se cumplió, `false` si no. Solo aparece cuando `executed` es `true`."
+          example: true
+        value:
+          type: object
+          nullable: true
+          description: Detalle de la evaluación de la regla. Es `null` cuando la regla no se evaluó o la llamada al validador falló.
+          properties:
+            identifier:
+              description: Identificador interno de la regla evaluada.
+              oneOf:
+                - type: string
+                - type: number
+              example: "activeVersionId_87"
+            validation_result:
+              type: boolean
+              description: Si la regla se cumplió.
+              example: true
+            explanation:
+              type: string
+              description: Explicación en texto de por qué la regla se cumplió o no.
+            variable_name:
+              type: string
+              description: Nombre del dato del documento que la regla comparó.
+            variable_value:
+              type: string
+              description: Valor encontrado en el documento.
+            reference_value:
+              type: string
+              description: Valor de referencia contra el que se comparó.
+            applied_rule:
+              type: string
+              description: Regla aplicada, tal como la interpretó el validador.
+
     VerificationItem:
       type: object
       properties:
@@ -4904,8 +5085,14 @@ components:
         item_order: { type: number }
         item_type: { type: string }
         item_value:
-          description: Estructura depende de `item_type`. Ver guía en /guia-devs/respuestas-por-tipo-de-item
+          description: |
+            Estructura depende de `item_type`. Ver guía en /guia-devs/respuestas-por-tipo-de-item.
+
+            Además de los campos propios del tipo, incluye una llave `cp_<prompt_id>` por cada extracción personalizada con resultado para ese ítem, donde `prompt_id` es el identificador editable de la extracción. Ver [Extracciones personalizadas](/producto/guias/extracciones-personalizadas).
+
+            Ese prefijo solo aplica a tipos de documento estándar. Un ítem de un tipo de ítem personalizado (`item_type` con prefijo `cit_`) nunca lleva llaves `cp_`: sus resultados viven en `pipeline`, con la forma del schema `CustomItemTypeItemValue`. Ver [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados#donde-salen-los-resultados).
           type: object
+          additionalProperties: true
         item_error:
           type: string
           nullable: true
@@ -4959,8 +5146,14 @@ components:
         item_order: { type: number }
         item_type: { type: string }
         item_value:
-          description: Estructura depende de `item_type`. Ver guía en /guia-devs/respuestas-por-tipo-de-item
+          description: |
+            Estructura depende de `item_type`. Ver guía en /guia-devs/respuestas-por-tipo-de-item.
+
+            Además de los campos propios del tipo, incluye una llave `cp_<prompt_id>` por cada extracción personalizada con resultado para ese ítem, donde `prompt_id` es el identificador editable de la extracción. Ver [Extracciones personalizadas](/producto/guias/extracciones-personalizadas).
+
+            Ese prefijo solo aplica a tipos de documento estándar. Un ítem de un tipo de ítem personalizado (`item_type` con prefijo `cit_`) nunca lleva llaves `cp_`: sus resultados viven en `pipeline`, con la forma del schema `CustomItemTypeItemValue`. Ver [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados#donde-salen-los-resultados).
           type: object
+          additionalProperties: true
         item_error:
           type: string
           nullable: true
@@ -6745,7 +6938,8 @@ components:
           example: "ccp_def456"
         process_reference:
           type: string
-          description: Etiqueta del proceso asignada por el usuario.
+          description: |
+            Etiqueta del proceso asignada por el usuario. Identifica el resultado de este proceso en el ítem procesado: cada paso de `item_value.pipeline` lo trae en `process_reference`. Ver [Tipos de ítem personalizados](/producto/guias/tipos-de-item-personalizados#donde-salen-los-resultados).
           example: "extraer_montos"
         process_type:
           type: string
@@ -6928,7 +7122,7 @@ components:
           example: "Extrae todos los montos monetarios del contrato."
         json_schema:
           type: object
-          description: "Solo para procesos de extracción. Define el esquema JSON de salida. Cuando se envía, `auto_improve` se establece en `false` automáticamente; enviar `auto_improve: true` junto con `json_schema` devuelve error 400. La raíz debe ser `type: object` con `properties`. Usa `type: [\"<tipo>\", \"null\"]` para campos anulables. Consulta la [estructura del json_schema](/producto/guias/tipos-de-item-personalizados#estructura-del-json_schema) para el formato requerido y ejemplos."
+          description: 'Solo para procesos de extracción. Define el esquema JSON de salida. Cuando se envía, `auto_improve` se establece en `false` automáticamente; enviar `auto_improve: true` junto con `json_schema` devuelve error 400. La raíz debe ser `type: object` con `properties`. Usa `type: ["<tipo>", "null"]` para campos anulables. Consulta la [estructura del json_schema](/producto/guias/tipos-de-item-personalizados#estructura-del-json_schema) para el formato requerido y ejemplos.'
         auto_improve:
           type: boolean
           default: true

@@ -239,6 +239,6 @@ Se indexan por empresa (`ubos_business_0`, `ubos_business_1`, …) y por persona
 
 ---
 
-## 9. Extracciones personalizadas (customUserPrompts)
+## 9. Extracciones personalizadas (`cp_<prompt_id>`)
 
-Si la cuenta tiene extracciones personalizadas activas, los resultados se exponen como `{sources_<índice>_customUserPrompts_<prompt_id>_<propiedad>}` (ej. `{sources_0_customUserPrompts_mi_revision_monto}`). Solo aplican si la cuenta del cliente las configuró; no asumir que existen.
+Si la cuenta tiene extracciones personalizadas activas, los resultados se exponen como `{sources_<índice>_cp_<prompt_id>_<propiedad>}` (ej. `{sources_0_cp_mi_revision_monto}`). Solo aplican si la cuenta del cliente las configuró; no asumir que existen.
