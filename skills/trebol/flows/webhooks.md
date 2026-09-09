@@ -55,6 +55,9 @@ Todos los items de extracción terminaron, pero la verificación aún no está m
 ### `verification.v2.document_status_updated`
 Cambió el estado documental (`documents_status`) de la verificación: `pending_upload` → `partial_upload` → `pending_external` → `full_upload` (puede retroceder tras una reapertura). El payload incluye `documents_status`, `previous_documents_status` y `updated_at`. Para saber cuándo el prospecto completó su expediente, filtra por `documents_status: "full_upload"`. **Nota:** este evento no incluye `account_name`.
 
+### `verification.v2.findings.updated`
+Trébol recalculó los **hallazgos** de la Síntesis de Dictamen: lo que le falta al expediente o requiere atención. Se emite en **cada** corrida, incluidas las provisionales previas al `finished`. Es la primera vía por la que los hallazgos salen de Trébol. El payload trae `findings[]` (`severity`, `message`, `missing_field?`), `source` (`provisional` | `final`), `computed_at` y `run_id`. `findings: []` es un resultado válido: la corrida no encontró nada. **Nota:** no trae `account_name`, ni `status`, ni `verification_tag`. `status` y el tag (como campo **`tag`**) los devuelve `GET /verifications/{verification-id}`; `account_name` no lo trae este evento ni ese endpoint (otros eventos v2 sí lo incluyen), así que tenlo de tu lado — `account_id` es tu propia cuenta. `missing_field` es una etiqueta descriptiva, no un catálogo cerrado, y no corresponde uno a uno con los `item_type`: muéstrala, no ramifiques lógica con ella. **Solo se guarda la corrida más reciente**, no un historial: si se agotan los reintentos, esa corrida no se recupera (consultar la verificación da la vigente, no la perdida). Persiste cada una solo si te importa la evolución; para el estado final basta leer la verificación.
+
 ### `verification_item.v2.completed`
 Un item específico completó su procesamiento. Contiene `item_error` si hubo problema. Códigos comunes:
 - **Documentales**: `password_protected_pdf` (PDF con contraseña), `get_input_file_info_failed` (falló al leer el archivo).
@@ -112,6 +115,44 @@ Trébol terminó de buscar el CURP de una persona. Posibles errores:
 ```
 
 A diferencia de los demás eventos v2, el payload no trae `account_name`.
+
+### `verification.v2.findings.updated`
+
+```json
+{
+  "event_name": "verification.v2.findings.updated",
+  "data": {
+    "verification_id": "5853393e-8cf7-4dc7-afd9-a92df69fff2b",
+    "account_id": "212457cc-09bb-4308-b69b-f719e6f2eb03",
+    "findings": [
+      {
+        "severity": "high",
+        "message": "Falta el poder notarial del representante legal",
+        "missing_field": "pw_mx"
+      },
+      {
+        "severity": "low",
+        "message": "El domicilio del comprobante no coincide con el del acta"
+      }
+    ],
+    "source": "provisional",
+    "computed_at": "2025-01-15T11:05:27Z",
+    "run_id": "0f6a1c2e-8f1b-4d2a-9c33-5b1f6e2a7d10"
+  }
+}
+```
+
+`findings: []` también es un payload válido: la corrida no encontró nada.
+
+**Forma distinta al `GET`:** en el webhook `findings` es el array y `source`/`computed_at` van a su lado; en `GET /verifications/{verification-id}` es un objeto y los hallazgos están en `findings.items`. `run_id` existe solo en el webhook. `source: "final"` implica verificación completada.
+
+Una corrida `provisional` se calcula antes de finalizar y corridas posteriores pueden reemplazarla. La `final` se calcula al finalizar y es la definitiva.
+
+Para quedarte con la vigente, aplica la de `computed_at` más reciente y descarta las anteriores. Si empatan, `final` gana sobre `provisional`. Una verificación reabierta puede emitir dos `final`: ahí también decide `computed_at`. Mismo `run_id` = reentrega, no recálculo.
+
+Disparador: se completa un item, con el expediente ya quieto y los hallazgos guardados viejos. Las corridas se agrupan (una por ráfaga, no una por documento). `severity` es enum cerrado (`high|medium|low`); `missing_field` no.
+
+La corrida `final` se emite antes que `verification.v2.finished`, pero las entregas pueden llegar fuera de orden: si quieres los hallazgos definitivos al cierre, espera `source: "final"`.
 
 ### `verification_item.v2.completed` (con error)
 

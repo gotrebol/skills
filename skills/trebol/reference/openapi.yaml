@@ -52,6 +52,8 @@ tags:
     description: Endpoints v1 (legacy) para obtener información detallada de empresas y verificaciones. Te recomendamos migrar a los endpoints v2.
   - name: Tipos de Ítem Personalizados
     description: Endpoints para crear y gestionar tipos de ítem personalizados con procesos configurables de clasificación, validación y extracción.
+  - name: Síntesis de Dictamen
+    description: Endpoints para ejecutar bajo demanda la Síntesis de Dictamen (`findings`) de una verificación.
 
 paths:
   /verifications:
@@ -644,6 +646,16 @@ paths:
         **Coordenadas de citas:** agrega `?with_citations=true` y los items de tipo acta incluirán un campo `citations.url` con la URL firmada al artifact de coordenadas de ese documento. Ver [Coordenadas de citas](/guia-devs/referencia/coordenadas-citas).
 
         **Reporte de consultas públicas externas:** cuando la verificación incluye consultas a fuentes externas (SAT, RENAPO, INE, SIGER), la respuesta agrega `lookups_report` con una URL firmada para descargar el reporte PDF de auditoría. El campo se omite si no hay reporte (verificaciones sin consultas externas, antiguas o de países aún no soportados). Ver [Consultas públicas externas](/guia-devs/monitorear/consultas-publicas-externas).
+
+        **Síntesis de Dictamen (`findings`):** la respuesta de este endpoint siempre incluye el campo `findings` con los hallazgos de la Síntesis de Dictamen. El listado `GET /verifications` no lo incluye.
+
+        El bloque completo es `null` mientras la revisión no se haya ejecutado para la verificación. Cuando existe, trae tres campos:
+
+        - `items`: lista de hallazgos, cada uno con `severity` (`high`, `medium` o `low`), `message` y, cuando aplica, `missing_field`. Una lista vacía significa que la revisión corrió y no encontró nada — distinto de `findings: null`.
+        - `computed_at`: fecha y hora ISO 8601 de la corrida que produjo los hallazgos. Es `null` en verificaciones antiguas, anteriores a que se registrara este dato.
+        - `source`: `provisional` o `final`.
+
+        `source` indica en qué momento Trébol calcula la revisión. `provisional`: la calcula antes de completarse la verificación, con un modelo más rápido, y una corrida final puede reemplazarla — sus hallazgos pueden cambiar de severidad o desaparecer. `final`: la calcula al completarse la verificación.
       operationId: getVerificationById
       parameters:
         - $ref: "#/components/parameters/verificationIdParam"
@@ -661,7 +673,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PublicVerification"
+                allOf:
+                  - $ref: "#/components/schemas/PublicVerification"
+                  - type: object
+                    required: [findings]
+                    properties:
+                      findings:
+                        $ref: "#/components/schemas/VerificationFindings"
               examples:
                 Success:
                   summary: Respuesta exitosa
@@ -683,6 +701,7 @@ paths:
                         item_status: "pending"
                         item_type: "csf_mx"
                         item_value: {}
+                    findings: null
                 ConReporteDeConsultas:
                   summary: Respuesta con reporte de consultas públicas externas
                   value:
@@ -704,6 +723,55 @@ paths:
                     lookups_report:
                       url: "https://files.gotrebol.com/.../lookups-report.pdf?...firma..."
                       generated_at: "2026-06-16T18:30:00.000Z"
+                    findings:
+                      items:
+                        - severity: "medium"
+                          message: "La estructura accionaria proviene únicamente de SIGER; no fue posible confirmarla con el acta constitutiva proporcionada."
+                      computed_at: "2026-06-16T18:30:00.000Z"
+                      source: "final"
+                ConHallazgosProvisionales:
+                  summary: Respuesta con hallazgos provisionales (revisión aún no final)
+                  value:
+                    id: "c8dc41fc-c477-404e-aff7-b9074f86d6d1"
+                    account_id: "99999999-9999-9999-9999-999999999999"
+                    status: "pending"
+                    created_at: "2026-06-16T18:00:00.000Z"
+                    updated_at: "2026-06-16T18:12:00.000Z"
+                    tag: "etiqueta"
+                    tax_id: "SAG160927GIA"
+                    business_name: "Trebol OPCO"
+                    friendly_name: "Empresa ACME S.A. de C.V."
+                    flow_id: "documents-v2"
+                    items:
+                      - id: 25441
+                        item_status: "complete"
+                        item_type: "acta_constitutiva"
+                        item_value: {}
+                    findings:
+                      items:
+                        - severity: "high"
+                          message: "No se encontró el acta constitutiva; sin ella no es posible confirmar la razón social ni la fecha de constitución."
+                          missing_field: "razon_social"
+                        - severity: "low"
+                          message: "El domicilio fiscal declarado no coincide con el del comprobante de domicilio."
+                      computed_at: "2026-06-16T18:12:00.000Z"
+                      source: "provisional"
+                SinHallazgos:
+                  summary: Respuesta con la revisión ejecutada y sin hallazgos
+                  value:
+                    id: "c8dc41fc-c477-404e-aff7-b9074f86d6d1"
+                    account_id: "99999999-9999-9999-9999-999999999999"
+                    status: "finished"
+                    created_at: "2026-06-16T18:00:00.000Z"
+                    updated_at: "2026-06-16T18:30:00.000Z"
+                    tax_id: "SAG160927GIA"
+                    business_name: "Trebol OPCO"
+                    flow_id: "documents-v2"
+                    items: []
+                    findings:
+                      items: []
+                      computed_at: "2026-06-16T18:30:00.000Z"
+                      source: "final"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "404":
@@ -1105,6 +1173,163 @@ paths:
                   message:
                     type: string
                     example: "verification with no items"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      security:
+        - ApiKeyAuth: []
+
+  /verifications/{verification-id}/findings/run:
+    post:
+      tags:
+        - Síntesis de Dictamen
+      summary: Ejecutar la Síntesis de Dictamen bajo demanda
+      description: |
+        Encola una corrida de la Síntesis de Dictamen (`findings`) para la verificación, sin esperar a que un nuevo documento la dispare automáticamente.
+
+        La corrida pasa por el mismo pipeline con deduplicación que usan las corridas automáticas, así que nunca genera corridas duplicadas.
+
+        **La respuesta es asíncrona.** El endpoint responde `202` en cuanto la corrida queda encolada, sin esperar a que termine; la corrida tarda unos segundos y su resultado se lee en el campo `findings` de [Obtener una verificación por su ID](https://docs.gotrebol.com/api-reference/leer-información-de-la-empresa/obtener-una-verificación-por-su-id). Para saber que terminó, guarda el `findings.computed_at` que tenías antes de llamar y consulta la verificación cada 3-5 segundos hasta que ese valor cambie (o hasta que `findings` deje de ser `null`, si nunca había corrido). Un límite de ~2 minutos es holgado; si se agota, vuelve a consultar más tarde en vez de reintentar el `POST`, porque la corrida encolada sigue en curso.
+
+        A diferencia de las corridas automáticas, una corrida pedida por este endpoint **no exige que haya cambiado algún documento**: varios hallazgos dependen de la vigencia de los documentos, así que las conclusiones pueden cambiar con el calendario aunque las entradas sean idénticas. Para acotar el costo hay un periodo mínimo entre corridas manuales (300 segundos por defecto), que se reporta como `recently_run`.
+
+        El `POST` **no lleva body**; la verificación se identifica por la URL.
+
+        Devuelve `409` con un `error_code` cuando la corrida no procede. Qué hacer en cada caso:
+
+        | `error_code` | Qué pasó | Qué hacer |
+        | --- | --- | --- |
+        | `not_enabled` | La cuenta no tiene habilitada la Síntesis de Dictamen. | No es activable por API: escríbenos para habilitarla. Reintentar no cambia el resultado. |
+        | `pending_documents` | Hay documentos requeridos sin subir o aún en procesamiento. | Sube los que falten. Para saber cuándo reintentar, consulta la verificación y espera a que los items que lista `pending_items` tengan `item_status: "complete"`; no reintentes el `POST` a ciegas. |
+        | `already_scheduled` | Ya hay una corrida encolada o en ejecución. | **No reintentes el `POST`**: ya vas a recibir el resultado. Pasa directo a sondear `findings.computed_at`, igual que tras un `202`. |
+        | `recently_run` | Hubo una corrida hace muy poco y sigue el periodo mínimo entre corridas manuales. | Espera los segundos que indica `retry_after_seconds` y vuelve a pedirla. |
+
+        Un segundo `POST` mientras hay una corrida en vuelo responde `409 already_scheduled`, nunca un `202` que duplique la corrida.
+
+        Para los códigos de error generales de la API (`401`, `404`, `500`), consulta [Errores](https://docs.gotrebol.com/guia-devs/errores).
+
+        ### Ejemplo
+
+        ```bash
+        curl -X POST "https://api.gotrebol.com/verifications/{verification-id}/findings/run" \
+          -H "x-api-key: TU_API_KEY"
+        ```
+
+
+        Sustituye `{verification-id}` por el id que te devolvió `POST /verifications` y
+        `TU_API_KEY` por tu API key. Si la corrida queda encolada, la respuesta es:
+
+
+        ```json
+        { "status": "queued" }
+        ```
+
+        Y el ciclo completo, pidiendo la corrida y esperando su resultado:
+
+        ```js
+        const verificationId = "c8dc41fc-c477-404e-aff7-b9074f86d6d1"; // el id de tu verificación
+        const headers = { "x-api-key": process.env.TREBOL_API_KEY };
+        const base = `https://api.gotrebol.com/verifications/${verificationId}`;
+        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+        // fetch no rechaza ante un status de error: hay que revisarlo a mano, o un
+        // 401 durante el sondeo se ve igual que "todavía no termina".
+        async function getVerification() {
+          const res = await fetch(base, { headers });
+          if (!res.ok) throw new Error(`Trébol respondió ${res.status}`);
+          return res.json();
+        }
+
+        // 1. Guarda el computed_at actual: es la referencia para saber si ya corrió.
+        const previous = (await getVerification()).findings?.computed_at ?? null;
+
+        // 2. Pide la corrida, reintentando cuando el cooldown lo pide.
+        while (true) {
+          const run = await fetch(`${base}/findings/run`, { method: "POST", headers });
+          if (run.status === 202) break;
+          if (run.status !== 409) throw new Error(`Trébol respondió ${run.status}`);
+
+          const { error_code, retry_after_seconds } = await run.json();
+          // Ya hay una corrida en vuelo: su resultado es el que esperas igual.
+          if (error_code === "already_scheduled") break;
+          // Corrió hace poco. Es el caso normal al revalidar por vigencia.
+          if (error_code === "recently_run") {
+            await sleep((retry_after_seconds ?? 60) * 1000);
+            continue;
+          }
+          // not_enabled y pending_documents no se resuelven reintentando.
+          throw new Error(`corrida rechazada: ${error_code}`);
+        }
+
+        // 3. Sondea hasta que computed_at cambie (~2 min es holgado).
+        const deadline = Date.now() + 120_000;
+        while (Date.now() < deadline) {
+          await sleep(4000);
+          const { findings } = await getVerification();
+          if (findings?.computed_at && findings.computed_at !== previous) {
+            return findings; // hallazgos frescos
+          }
+        }
+        // Se agotó la espera. La corrida sigue en curso: no es un fallo, así que
+        // devuelve los hallazgos que ya tenías y vuelve a consultar más tarde.
+        return (await getVerification()).findings;
+        ```
+      operationId: ejecutarRevisionDeHallazgos
+      # Pin the generated page's URL. Mintlify builds it from the tag + summary,
+      # which are accented Spanish, so the default route lands on
+      # /api-reference/síntesis-de-dictamen/… — a URL that percent-encodes to
+      # mojibake the moment anyone copies or pastes it. Display text keeps its
+      # accents; only the slug is ASCII.
+      x-mint:
+        href: "/api-reference/sintesis-de-dictamen/ejecutar-sintesis-de-dictamen-bajo-demanda"
+      parameters:
+        - $ref: "#/components/parameters/verificationIdParam"
+      responses:
+        "202":
+          description: Corrida de hallazgos encolada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [queued]
+                    description: Estado de la solicitud. Siempre `queued` cuando la corrida queda encolada.
+              example:
+                status: "queued"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "409":
+          description: La corrida no procede en el estado actual de la verificación. Revisa `error_code` para saber la causa.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FindingsRunConflict"
+              examples:
+                NotEnabled:
+                  summary: not_enabled
+                  value:
+                    error_code: "not_enabled"
+                    message: "The findings analysis is not enabled for this account."
+                PendingDocuments:
+                  summary: pending_documents
+                  value:
+                    error_code: "pending_documents"
+                    pending_items: ["Acta constitutiva", "constancia_situacion_fiscal_mx"]
+                    message: "Findings cannot run yet: some required documents are still uploading or being processed."
+                AlreadyScheduled:
+                  summary: already_scheduled
+                  value:
+                    error_code: "already_scheduled"
+                    message: "A findings run is already queued or in progress for this verification."
+                RecentlyRun:
+                  summary: recently_run
+                  value:
+                    error_code: "recently_run"
+                    retry_after_seconds: 240
+                    message: "Findings were recalculated moments ago. Try again in 240 seconds."
         "500":
           $ref: "#/components/responses/InternalServerError"
       security:
@@ -4872,6 +5097,53 @@ components:
         data: { $ref: "#/components/schemas/V2ExternalLookupsData" }
         meta: { $ref: "#/components/schemas/V2Meta" }
 
+    FindingsRunConflict:
+      type: object
+      description: >
+        Respuesta `409` de `POST /verifications/{verification-id}/findings/run`
+        cuando la corrida de hallazgos no procede en el estado actual de la verificación.
+
+
+        Este cuerpo usa `error_code`, no el `code` de `ErrorResponse`, a propósito: `code`
+        clasifica el error de forma genérica (`VALIDATION_ERROR`, `NOT_FOUND`) y acompaña a
+        `success: false`, mientras que `error_code` dice qué condición del negocio impide la
+        corrida y se lee para decidir qué hacer a continuación. Ver STYLE_GUIDE, "No duplicar
+        significado".
+      properties:
+        error_code:
+          type: string
+          enum:
+            [not_enabled, pending_documents, already_scheduled, recently_run, up_to_date]
+          description: >
+            Causa por la que la corrida no procede. `not_enabled`: la cuenta no tiene
+            habilitada la Síntesis de Dictamen. `pending_documents`: hay documentos
+            requeridos sin subir o aún en procesamiento. `already_scheduled`: ya hay una
+            corrida encolada o en ejecución. `recently_run`: hubo una corrida manual hace
+            muy poco y aún corre el periodo mínimo entre corridas. `up_to_date`: nada
+            cambió desde la última corrida — este endpoint **no** devuelve este código
+            (las corridas bajo demanda no exigen que haya cambiado un documento); queda
+            en el enum porque el mismo esquema describe las corridas automáticas.
+        message:
+          type: string
+          description: Descripción legible de la causa, pensada para mostrarse tal cual.
+        pending_items:
+          type: array
+          description: >
+            Solo cuando `error_code` es `pending_documents`: los items de documento que
+            bloquean la corrida (nombre configurado del item o, en su defecto, su tipo).
+            Vacía cuando todavía no se sube ningún documento requerido.
+          items:
+            type: string
+        retry_after_seconds:
+          type: integer
+          description: >
+            Solo cuando `error_code` es `recently_run`: segundos que faltan para poder
+            pedir otra corrida. Es el tiempo restante, no la duración total del
+            periodo mínimo entre corridas.
+          example: 240
+      required:
+        - error_code
+        - message
     ErrorResponse:
       type: object
       properties:
@@ -5076,6 +5348,59 @@ components:
             applied_rule:
               type: string
               description: Regla aplicada, tal como la interpretó el validador.
+
+    VerificationFindings:
+      type: object
+      nullable: true
+      description: >
+        Hallazgos de la Síntesis de Dictamen.
+
+        Solo lo devuelve `GET /verifications/{verification-id}`, donde siempre está presente.
+        El listado `GET /verifications` no incluye este campo: para leer los hallazgos de una
+        verificación, consúltala por su ID.
+
+        Es `null` mientras la revisión no se haya ejecutado para esa verificación. Un `items`
+        vacío es distinto: significa que la revisión sí corrió y no encontró nada.
+      required: [items, computed_at, source]
+      properties:
+        items:
+          type: array
+          description: >
+            Lista de hallazgos. Vacía cuando la revisión se ejecutó y no encontró problemas.
+          items:
+            $ref: "#/components/schemas/VerificationFinding"
+        computed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: >
+            Fecha y hora (ISO 8601) de la corrida que produjo los hallazgos. Es `null` en
+            verificaciones antiguas, anteriores a que se registrara este dato.
+        source:
+          type: string
+          enum: [provisional, final]
+          description: >
+            Origen de la revisión. `provisional`: Trébol la calcula antes de completarse la
+            verificación, con un modelo más rápido, y una corrida final puede reemplazarla.
+            `final`: Trébol la calcula al completarse la verificación.
+
+    VerificationFinding:
+      type: object
+      description: Un hallazgo individual de la Síntesis de Dictamen.
+      properties:
+        severity:
+          type: string
+          enum: [high, medium, low]
+          description: Severidad del hallazgo.
+        message:
+          type: string
+          description: Descripción del hallazgo en lenguaje natural.
+        missing_field:
+          type: string
+          description: >
+            Campo o dato faltante al que se refiere el hallazgo, cuando aplica (por ejemplo
+            `shareholders`). Se omite cuando el hallazgo no corresponde a un dato faltante.
+      required: [severity, message]
 
     VerificationItem:
       type: object

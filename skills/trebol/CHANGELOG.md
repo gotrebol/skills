@@ -4,6 +4,35 @@ Historial de cambios al skill de Trébol distribuido vía [skills.sh](https://ww
 
 Los integradores pueden preguntarle a su asistente con IA *"¿qué cambió en la última versión del skill de Trébol?"* y recibir un resumen consultando este archivo.
 
+## 2026-09-03
+
+- **Nuevo evento de webhook `verification.v2.findings.updated`**: Trébol ahora notifica cada vez que recalcula los hallazgos de la Síntesis de Dictamen, sin esperar a que la verificación termine. Es opt-in: hay que incluirlo en el array `events` al crear o actualizar el webhook. Impacto en integraciones:
+  - **Se emite en cada corrida**, incluidas las provisionales previas al `finished`. Antes los hallazgos solo se podían leer consultando la verificación; ahora llegan solos.
+  - **Payload**: `verification_id`, `account_id`, `findings[]` (`severity`, `message`, `missing_field?`), `source` (`provisional` | `final`), `computed_at` y `run_id`. `findings: []` es un resultado válido (corrida limpia).
+  - **Sin `account_name`**, igual que `verification.v2.document_status_updated`. Tampoco trae `status` ni `verification_tag`: `status` y el tag (como campo `tag`) salen de `GET /verifications/{verification-id}`; `account_name` no lo trae este evento ni ese endpoint (otros eventos v2 sí lo incluyen), así que tenlo de tu lado.
+  - **`severity` es enum cerrado** (`high`/`medium`/`low`): Trébol descarta hallazgos con otro valor antes de guardarlos.
+  - **Solo se guarda la corrida más reciente**, no un historial: una corrida nueva sobrescribe a la anterior, y una cuyos reintentos se agotan no se recupera. Persiste cada una si te importa la evolución de los hallazgos.
+  - **Deduplicación y orden**: `run_id` identifica la corrida (mismo `run_id` = reentrega, no recálculo); para quedarte con la más reciente ordena por `computed_at`, y `final` gana sobre `provisional`.
+  - Documentado en la guía de webhooks y en `flows/webhooks.md`.
+
+## 2026-09-01
+
+- **Síntesis de Dictamen bajo demanda** (`POST /verifications/{verification-id}/findings/run`): nuevo endpoint para pedir una corrida de la Síntesis de Dictamen sin esperar a que la dispare la llegada de un documento. Antes las corridas solo se disparaban internamente al completarse items, así que una integración no tenía forma de pedir un recálculo. Impacto en integraciones:
+  - **Es asíncrono**: responde `202 {"status": "queued"}` y la corrida termina unos segundos después. Para saber que terminó, guarda el `findings.computed_at` previo y consulta [Obtener una verificación por su ID](https://docs.gotrebol.com/api-reference/leer-información-de-la-empresa/obtener-una-verificación-por-su-id) cada 3-5 segundos hasta que cambie. No reintentes el `POST` si tu espera se agota: la corrida encolada sigue en curso.
+  - **Sin corridas duplicadas**: usa el mismo pipeline con deduplicación que las corridas automáticas, así que llamarlo dos veces no produce dos corridas.
+  - **No exige que haya cambiado un documento**, a diferencia de las corridas automáticas: varios hallazgos dependen de la vigencia de los documentos, así que las conclusiones pueden cambiar con el calendario aunque las entradas sean idénticas. En su lugar hay un periodo mínimo entre corridas manuales (300 s por defecto).
+  - **`409` con `error_code`** cuando no procede: `not_enabled` (la cuenta no tiene habilitada la revisión), `pending_documents` (con `pending_items`), `already_scheduled` (ya hay una corrida en vuelo) y `recently_run` (con `retry_after_seconds`). El código `up_to_date` existe en el esquema `FindingsRunConflict` pero este endpoint no lo devuelve.
+  - Spec y copia del skill sincronizadas con el endpoint, el esquema `FindingsRunConflict` y los cuatro ejemplos de `409`.
+
+## 2026-08-31
+
+- **Síntesis de Dictamen (`findings`) en `GET /verifications/{verification-id}`**: la respuesta ahora incluye un bloque `findings` con los hallazgos de la Síntesis de Dictamen: lo que Trébol detectó como faltante o inconsistente en la documentación de la empresa. Antes no había forma documentada de leerlos desde la API pública. Impacto en integraciones:
+  - **Forma**: `items` (lista de hallazgos con `severity` `high`/`medium`/`low`, `message` y opcionalmente `missing_field`), `computed_at` (ISO 8601 de la corrida que los produjo) y `source`.
+  - **Solo en el detalle**: el listado `GET /verifications` no trae el campo. Para leer los hallazgos de una verificación, consúltala por su id.
+  - **`null` ≠ lista vacía**: el bloque completo es `null` mientras la revisión no se haya ejecutado para esa verificación. Un `items` vacío significa que sí corrió y no encontró nada. Tratar ambos casos igual hace que una verificación sin revisar se reporte como "sin hallazgos".
+  - **`source`**: `provisional` = Trébol la calculó antes de completarse la verificación, con un modelo más rápido, y una corrida final puede reemplazarla; sus hallazgos pueden cambiar de severidad o desaparecer. `final` = la calculó al completarse la verificación. Si tu flujo decide a partir de los hallazgos, espera a `final`.
+  - Spec y copia del skill sincronizadas, con el schema `VerificationFinding` y ejemplos de los casos `final`, `provisional` y sin hallazgos.
+
 ## 2026-08-12
 
 - **`json_schema` en creación de procesos de extracción** (`POST /v2/custom-item-types/{id}/processes`): ahora se puede enviar `json_schema` al crear un proceso de extracción. Cuando se envía, `auto_improve` se establece en `false` automáticamente (enviar `auto_improve: true` junto con `json_schema` devuelve 400). Si no se envía `json_schema`, el comportamiento anterior se mantiene (`auto_improve` debe ser `true`). Misma regla aplica al actualizar (`PATCH`) un proceso con `json_schema`. La guía incluye nueva sección "Estructura del `json_schema`" con formato requerido, campos anulables (`"type": ["string", "null"]`) y tres ejemplos (plano, con arrays anidados, y mixto). Impacto en integraciones:
