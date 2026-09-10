@@ -226,6 +226,10 @@ paths:
                           type: object
                           description: Opciones adicionales del ítem/documento que afectan al proceso interno del mismo.
                           properties:
+                            upload_url:
+                              type: string
+                              format: uri
+                              description: URL firmada temporal para subir el archivo del item mediante PUT antes de confirmar con options.uploaded_file.
                             is_optional:
                               type: boolean
                               description: Indica si el ítem/documento es opcional.
@@ -506,6 +510,65 @@ paths:
           $ref: "#/components/responses/InternalServerError"
 
   /verification-items/{id}:
+    put:
+      operationId: confirmarCargaDocumento
+      tags:
+        - Gestion de item Ids
+      summary: Confirmar la carga de un documento
+      description: |
+        Después de subir el archivo mediante PUT a `item_options.upload_url`, confirma la carga
+        para iniciar el procesamiento del item. Aplica a `generic`, `doc_validation`,
+        tipos de extracción de documentos y `doc_splitter`, incluidos los tipos
+        personalizados habilitados para la cuenta. El procesamiento es asíncrono.
+        Ver [Carga directa](/guia-devs/crear-verificaciones/via-api/carga-directa).
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del item recibido al crear la verificación o agregar items.
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [options]
+              properties:
+                options:
+                  type: object
+                  required: [uploaded_file]
+                  properties:
+                    uploaded_file:
+                      type: boolean
+                      description: Si es true, confirma la carga e inicia el procesamiento. Si es false, no confirma ni inicia el procesamiento.
+                      example: true
+            example:
+              options:
+                uploaded_file: true
+      responses:
+        "200":
+          description: Solicitud procesada. Con uploaded_file en true, confirma el archivo y solicita el procesamiento; con false, no confirma la carga ni solicita el procesamiento.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: "#/components/schemas/PublicVerificationItem"
+                  triggeredSideEffects:
+                    type: boolean
+                    description: Indica si la actualización solicitó el procesamiento del item.
+                    example: true
+        "404":
+          description: El item no existe o el archivo aún no está en el almacenamiento de carga.
+          content:
+            application/json:
+              example:
+                message: S3 object not found
     get:
       tags:
         - Gestion de item Ids
@@ -781,8 +844,60 @@ paths:
       security:
         - ApiKeyAuth: []
 
+  /v2/verifications/{verification-id}/corporate-history:
+    get:
+      operationId: obtenerHistorialCorporativo
+      tags:
+        - Leer información de la empresa
+      summary: Obtener historial corporativo conciliado
+      description: |
+        Retorna el historial de actas de una empresa, conciliado entre las tres fuentes que lo conocen, con una fila por acta y la trazabilidad de qué fuente aportó cada dato.
+
+        Ninguna fuente ve la empresa completa, y por eso el historial es el cruce:
+
+        - **`siger`** — el folio mercantil. Es el registro de lo que se inscribió: fechas de inscripción, formas precodificadas y el acto tal como quedó asentado. No ve las actas que nunca se inscribieron, y empieza cuando la empresa se digitalizó.
+        - **`client_file`** — los documentos que el cliente subió. Prueba que el acta existe y que la tienen, nunca lo que se acordó en ella.
+        - **`background`** — los antecedentes que el fedatario narra al inicio de cada acta. Es la única fuente que ve actas que nadie subió y que el registro nunca inscribió, que suelen ser la mayoría de la historia de una empresa.
+
+        Cada acta declara en `sources` qué fuentes la conocen. Un acta que solo trae `["background"]` existe porque otra acta la cita: llega con `cited_by` y con `evidence`, la cita textual que lo sostiene, y nunca se presenta como un hecho sin respaldo.
+
+        **Se calcula al momento de la consulta**, de forma determinística sobre los datos que ya están en la verificación. No hay copia almacenada, así que la respuesta nunca queda obsoleta — y si los datos son parciales, `coverage` lo dice en vez de que el resultado parezca completo.
+
+        **Las tres fechas de un acta** se distinguen porque se confunden con facilidad: `assembly_date` es cuándo se reunió la asamblea, `instrument_date` cuándo un fedatario la protocolizó y `registration_date` cuándo se inscribió el acta en el Registro público de comercio. `timeline_date` es la llave de orden, con precedencia declarada: instrumento, luego inscripción, luego asamblea. Cuando dos fuentes dan valores distintos para la misma fecha gana el expediente, luego el folio y al final los antecedentes: el expediente tiene el documento en mano, mientras que el folio y los antecedentes solo reportan una lectura de él. Si una misma fuente reporta el acta dos veces —un instrumento inscrito en dos folios— se toma la más antigua, solo para ordenarla.
+
+        **Esta versión no reporta discrepancias entre fuentes.** El valor elegido se entrega sin decir que otra fuente decía algo distinto. Cuando dos antecedentes fechan la misma acta de forma diferente, las dos citas quedan visibles en `evidence`, que es donde la diferencia se puede leer directamente.
+
+        **`coverage` declara hasta dónde vemos**, nunca que el historial esté completo. `combined.no_acta_after` es la fecha del acta más reciente del expediente: un cambio posterior a esa fecha no sería visible ni aunque hubiera ocurrido.
+
+        **`document_check`** es un conteo objetivo, sin ranking. Qué documento faltante importa es política de cada cliente, no una conclusión nuestra: el acta entrega `sources`, `changes[].event_type` y `proof_document`, y quien la lee aplica su propio criterio. La lista de faltantes se deriva del historial mismo, filtrando las actas cuyo `sources` no incluye `client_file`.
+      parameters:
+        - name: verification-id
+          in: path
+          required: true
+          description: ID de la verificación
+          schema: { type: string }
+      responses:
+        "200":
+          description: Historial recuperado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V2PublicResponseCorporateHistory"
+              examples:
+                corporateHistory:
+                  $ref: "#/components/examples/V2CorporateHistoryExample"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+      security:
+        - ApiKeyAuth: []
+
   /v2/verifications/{verification-id}/{entity}:
     get:
+      operationId: obtenerSeccionPorIdDeVerificacion
       tags:
         - Leer información de la empresa
       summary: Obtener sección por ID de verificación
@@ -890,6 +1005,7 @@ paths:
 
   /v2/companies/{etiqueta}/{section}:
     get:
+      operationId: obtenerSeccionPorEtiquetaDeEmpresa
       tags:
         - Leer información de la empresa
       summary: Obtener sección por etiqueta de empresa
@@ -1091,7 +1207,7 @@ paths:
         - Retorna el documento procesado con los datos actualizados
 
         **Obtener IDs de personas y roles:**
-        Los valores de `person_id` y `role_id` se pueden obtener del endpoint [Obtener sección por ID de verificación](/docs/api-reference/leer-información-de-la-empresa/obtener-sección-por-id-de-verificación) bajo la sección `/people`:
+        Los valores de `person_id` y `role_id` se pueden obtener del endpoint [Obtener sección por ID de verificación](https://docs.gotrebol.com/api-reference/leer-información-de-la-empresa/obtener-sección-por-id-de-verificación) bajo la sección `/people`:
         - `person_id`: Se obtiene del campo `people_id` en cada objeto del array `key_people`
         - `role_id`: Se obtiene del campo `id` en cada objeto del array `roles` dentro de cada elemento de `key_people`
 
@@ -1522,7 +1638,7 @@ paths:
                         description: |
                           Opciones adicionales para el ítem. Para el origen del archivo envía **uno** de:
                           `file_url` (URL descargable) o `file_source: "item"` (para referenciar un corte de un `doc_splitter`).
-                          Si omites ambos, Trébol devuelve una `upload_url` presignada (ver [flujo de carga directa](/guia-devs/crear-verificaciones/via-api/carga-directa)). `doc_splitter` es la excepción: requiere `file_url` o `file_source` en la creación.
+                          Si omites ambos, Trébol devuelve una `upload_url` presignada (ver [flujo de carga directa](/guia-devs/crear-verificaciones/via-api/carga-directa)). Este flujo también aplica a `doc_splitter`: sube el archivo y confirma con `options.uploaded_file: true`.
                         properties:
                           file_url:
                             type: string
@@ -1566,7 +1682,7 @@ paths:
                               support_id:
                                 type: string
                                 description: |
-                                  Identificador del sub-recurso dentro del ítem referenciado por `item_id`. Para un `doc_splitter` este valor es el `support_id` del corte (formato `ds_<uuid>`) que Trébol expone en `item_value.split_documents[].support_id`.
+                                  Identificador del sub-recurso dentro del ítem referenciado por `item_id`. Para un `doc_splitter` este valor es el `support_id` del corte que Trébol expone en `item_value.split_documents[].support_id`.
                                 example: "ds_9f7d3a1c-1c72-4b0f-b8e2-5c9c8b5d4a11"
                             required:
                               - item_id
@@ -1651,6 +1767,10 @@ paths:
                       type: object
                       description: Opciones adicionales del ítem/documento que afectan al proceso interno del mismo.
                       properties:
+                        upload_url:
+                          type: string
+                          format: uri
+                          description: URL firmada temporal para subir el archivo del item mediante PUT antes de confirmar con options.uploaded_file.
                         is_optional:
                           type: boolean
                           description: Indica si el ítem/documento es opcional.
@@ -3282,6 +3402,8 @@ paths:
                       currency: "MXN"
                     source:
                       document: "acta_constitutiva"
+                    shareholders_unavailable_reason: null
+                    business_type: "SOCIEDAD ANONIMA DE CAPITAL VARIABLE"
                     verification:
                       id: "c8dc41fc-c477-404e-aff7-b9074f86d6d1"
                       tag: "etiqueta"
@@ -3501,6 +3623,8 @@ paths:
                       currency: "MXN"
                     source:
                       document: "acta_constitutiva"
+                    shareholders_unavailable_reason: null
+                    business_type: "SOCIEDAD ANONIMA DE CAPITAL VARIABLE"
                     verification:
                       id: "c8dc41fc-c477-404e-aff7-b9074f86d6d1"
                       tag: "etiqueta"
@@ -3990,6 +4114,8 @@ components:
                 folio_date_source: "ac_mx"
             information_source: "acta_constitutiva"
             source_date: "2024-10-12"
+          shareholders_unavailable_reason: null
+          business_type: "SOCIEDAD ANONIMA DE CAPITAL VARIABLE"
         meta:
           section: "shareholders"
           verification:
@@ -4205,6 +4331,157 @@ components:
             id: "c8dc41fc-c477-404e-aff7-b9074f86d6d1"
             tag: "mi-etiqueta"
             status: "pending"
+    V2CorporateHistoryExample:
+      summary: corporate-history
+      value:
+        success: true
+        data:
+          schema_version: "1.0"
+          verification_id: "018f2c7a-4b91-7d3e-a6f1-2c8d5e9b0a44"
+          generated_at: "2026-08-27T15:04:00.000Z"
+          coverage:
+            siger:
+              folios_queried: ["N-2022032489"]
+              queried_at: "2026-04-14T19:47:03.000Z"
+              entries_returned: 4
+              folios_returned: 1
+            background:
+              extracted_from: ["6869", "103930", "4262"]
+              records_unidentified: 0
+              unreadable_extractions: []
+              numbers_corrected:
+                - cited_in: "6869"
+                  literal: "mil trescientos veintidós"
+                  reported: "1326"
+                  corrected: "1322"
+            combined:
+              earliest_timeline_date: "1982-06-10"
+              latest_timeline_date: "2024-05-13"
+              no_acta_after: "2024-02-29"
+          contribution:
+            total_actas: 5
+            in_siger: 2
+            in_background: 3
+            in_client_file: 2
+            only_in_siger: 1
+            only_in_background: 2
+            only_in_client_file: 1
+          history:
+            - acta_number: "4262"
+              folios: ["N-2022032489"]
+              item_id: 1626845
+              alias_numbers: []
+              acta_type: "aa_mx"
+              assembly_type: "General"
+              formalized_by:
+                type: "notario"
+                name: "VILLALOBOS"
+                number: "119"
+                city: "México"
+              assembly_date: "2014-12-15"
+              instrument_date: "2019-10-16"
+              registration_date: "2022-05-09"
+              timeline_date: "2019-10-16"
+              sources: ["siger", "background", "client_file"]
+              proof_document:
+                item_id: 1626845
+                origin: "client_upload"
+                url: "https://files.example/1626845.pdf"
+              registry_entries:
+                - folio: "N-2022032489"
+                  row: 2
+                  page: 1
+                  nci: "202200110421"
+                  label: "Cambio de domicilio social"
+                  form: "M2 - Asamblea"
+                  mode: "Inscripción vía web inmediata"
+                  admitted_at: "2022-05-09"
+                  registered_at: "2022-05-09"
+                  modifications:
+                    - type: "Acuerdo de disolución de la sociedad."
+                      value: true
+                  proof_document_url: "https://files.example/4262_1_2_file.pdf"
+                - folio: "N-2022032489"
+                  row: 3
+                  page: 1
+                  nci: "202200110422"
+                  label: "Otros acuerdos que conforme a la Ley deban de registrarse"
+                  form: "M2 - Asamblea"
+                  mode: "Inscripción vía web inmediata"
+                  admitted_at: "2022-05-09"
+                  registered_at: "2022-05-09"
+                  modifications: []
+                  proof_document_url: null
+              cites: ["18694"]
+              cited_by: ["103930"]
+              changes:
+                - event_type: "constitucion_modificacion_domicilio"
+                  description: "Cambio de domicilio social."
+                  sources: ["siger"]
+                  reported_by:
+                    registry_entries:
+                      - folio: "N-2022032489"
+                        row: 2
+                    citing_actas: []
+                - event_type: "aumento_capital"
+                  description: "Se aprueba un aumento de capital social por 700,000.00."
+                  sources: ["background"]
+                  reported_by:
+                    registry_entries: []
+                    citing_actas: ["103930"]
+              evidence:
+                - cited_in: "103930"
+                  cited_in_date: "2023-12-14"
+                  page: "4"
+                  quote: "POR ESCRITURA PÚBLICA NÚMERO CUATRO MIL DOSCIENTOS SESENTA Y DOS..."
+            - acta_number: "18694"
+              folios: []
+              item_id: null
+              alias_numbers: []
+              acta_type: null
+              assembly_type: "protocolización"
+              formalized_by:
+                type: "notario"
+                name: "Emmanuel Villicaña Estrada"
+                number: "35"
+                city: "Tlalnepantla, Estado de México"
+              assembly_date: "1996-12-13"
+              instrument_date: null
+              registration_date: null
+              timeline_date: "1996-12-13"
+              sources: ["background"]
+              proof_document: null
+              registry_entries: []
+              cites: []
+              cited_by: ["103930", "4262"]
+              changes:
+                - event_type: "fusion"
+                  description: "Protocolización del convenio de fusión de INDESIN como sociedad fusionante con INTERPROS."
+                  sources: ["background"]
+                  reported_by:
+                    registry_entries: []
+                    citing_actas: ["103930", "4262"]
+              evidence:
+                - cited_in: "103930"
+                  cited_in_date: "2023-12-14"
+                  page: "3"
+                  quote: "POR ESCRITURA PÚBLICA NÚMERO DIECIOCHO MIL SEISCIENTOS NOVENTA Y CUATRO... DE FECHA TRECE DE DICIEMBRE DE MIL NOVECIENTOS NOVENTA Y SEIS..."
+                - cited_in: "4262"
+                  cited_in_date: "2014-12-15"
+                  page: "3"
+                  quote: "V.- ACTA DE ASAMBLEA.- POR ESCRITURA PÚBLICA NÚMERO DIECIOCHO MIL SEISCIENTOS NOVENTA Y CUATRO... DE FECHA TRECE DE SEPTIEMBRE DEL AÑO DE MIL NOVECIENTOS NOVENTA Y SIETE..."
+          document_check:
+            summary:
+              actas_in_history: 5
+              client_uploaded: 2
+              not_uploaded_by_client: 3
+        meta:
+          section: "corporate-history"
+          verification:
+            id: "018f2c7a-4b91-7d3e-a6f1-2c8d5e9b0a44"
+            tag: "indesin"
+            status: "finished"
+
     V2SourcesExample:
       summary: sources
       value:
@@ -4870,6 +5147,20 @@ components:
         capital:
           $ref: "#/components/schemas/V2CompanyCapital"
           nullable: true
+        shareholders_unavailable_reason:
+          type: string
+          nullable: true
+          enum:
+            ["business_type_without_shareholders", "pending_extraction", null]
+          description: |
+            Por qué `shareholders` viene vacío. `business_type_without_shareholders`: el tipo de sociedad no tiene accionistas y la lista vacía es la respuesta final. `pending_extraction`: hay un acta en extracción, así que la lista vacía todavía no dice nada. `null`: no hay motivo que reportar, sea porque hay accionistas o porque el tipo de sociedad sí los tiene. Solo lleva un motivo cuando la lista está vacía. Los dos campos siempre están presentes: lo opcional es el valor, no su presencia. Nunca se omiten del objeto, ni siquiera cuando hay accionistas — en ese caso `shareholders_unavailable_reason` llega en `null`. Campo aditivo, disponible desde el 20 de agosto de 2026. Ver [Motivo cuando la lista de accionistas viene vacía](/guia-devs/uso-kyb/mexico/accionistas#motivo-sin-accionistas).
+          example: null
+        business_type:
+          type: string
+          nullable: true
+          description: |
+            Tipo de sociedad del que Trébol derivó el motivo, tal como está escrito en el documento. Sale del acta más reciente y, si ninguna acta lo trae, de la constancia de situación fiscal. El campo siempre está presente; su valor es el tipo de sociedad cuando Trébol lo puede resolver y `null` cuando no, también cuando el motivo es `null`. No lo compares contra tu propia lista de tipos: usa `shareholders_unavailable_reason`. Campo aditivo, disponible desde el 20 de agosto de 2026.
+          example: "SOCIEDAD ANONIMA DE CAPITAL VARIABLE"
         citations:
           type: object
           description: |
@@ -4964,6 +5255,332 @@ components:
         sources:
           type: array
           items: { $ref: "#/components/schemas/V2CompanySource" }
+
+    V2PublicResponseCorporateHistory:
+      type: object
+      properties:
+        success: { type: boolean, enum: [true] }
+        data: { $ref: "#/components/schemas/CorporateHistory" }
+        meta: { $ref: "#/components/schemas/CorporateHistoryMeta" }
+
+    CorporateHistoryMeta:
+      type: object
+      properties:
+        section: { type: string, enum: [corporate-history] }
+        verification:
+          $ref: "#/components/schemas/V2VerificationMeta"
+
+    CorporateHistory:
+      type: object
+      properties:
+        schema_version:
+          type: string
+          description: Versión del contrato. Los campos nuevos son aditivos.
+          example: "1.0"
+        verification_id: { type: string }
+        generated_at:
+          type: string
+          format: date-time
+          description: Momento en que se calculó esta respuesta.
+        coverage: { $ref: "#/components/schemas/CorporateHistoryCoverage" }
+        contribution:
+          { $ref: "#/components/schemas/CorporateHistoryContribution" }
+        history:
+          type: array
+          description: Una fila por acta, de la más reciente a la más antigua por `timeline_date`.
+          items: { $ref: "#/components/schemas/CorporateHistoryActa" }
+        document_check:
+          type: object
+          properties:
+            summary:
+              $ref: "#/components/schemas/CorporateHistoryDocumentCheck"
+
+    CorporateHistoryActa:
+      type: object
+      properties:
+        acta_number:
+          type: string
+          nullable: true
+          description: |
+            Número del instrumento, normalizado a dígitos para poder cruzarse entre fuentes. Es `null` cuando no hay nada con qué identificarla: un documento subido sin número, una inscripción cuyo número no trae dígitos, o cualquier fila del listado sin números de instrumento (ver `coverage.siger.no_instrument_numbers`). Un acta sin número no se fusiona con ninguna otra, porque no hay llave.
+          example: "4262"
+        folios:
+          type: array
+          items: { type: string }
+          description: |
+            FME de cada folio que inscribió el acta, empezando por el orden en que los devolvió el registro; vacío cuando ningún folio la tiene. Es una lista porque un mismo instrumento puede inscribirse más de una vez: los folios que devuelve una consulta son la misma empresa vista desde varias oficinas registrales, y una sociedad que cambió de domicilio queda inscrita en el folio que dejó y en el que llegó. La identidad de un acta es `acta_number` solo, así que esas inscripciones son un acta y esta es la lista de dónde quedó.
+          example: ["N-2022032489"]
+        item_id:
+          type: integer
+          nullable: true
+          description: ID del item de verificación que contiene el documento, cuando existe.
+        alias_numbers:
+          type: array
+          items: { type: string }
+          description: Otros números con que alguna fuente se refirió al mismo instrumento.
+        acta_type:
+          type: string
+          nullable: true
+          description: Tipo de item con que se cargó el documento (`ac_mx`, `aa_mx`, `pw_mx`). Es `null` para un acta que solo conocen el folio o los antecedentes.
+        assembly_type:
+          type: string
+          nullable: true
+          description: Texto literal de la fuente ("General", "acta constitutiva", "protocolización"). Sin catálogo normalizado.
+        formalized_by:
+          type: object
+          description: El fedatario, copiado de la fuente que lo traiga. No se concilia entre fuentes; el mismo corredor aparece escrito de tres formas distintas en tres actas.
+          properties:
+            type: { type: string, nullable: true }
+            name: { type: string, nullable: true }
+            number: { type: string, nullable: true }
+            city: { type: string, nullable: true }
+        assembly_date:
+          type: string
+          format: date
+          nullable: true
+          description: Cuándo se reunió la asamblea.
+        instrument_date:
+          type: string
+          format: date
+          nullable: true
+          description: Cuándo un fedatario protocolizó el acta.
+        registration_date:
+          type: string
+          format: date
+          nullable: true
+          description: Cuándo el registro la inscribió.
+        timeline_date:
+          type: string
+          format: date
+          nullable: true
+          description: Llave de orden, con precedencia `instrument_date` → `registration_date` → `assembly_date`. El historial está ordenado por cuándo se documentó un cambio, no por cuándo ocurrió.
+        sources:
+          type: array
+          description: Qué fuentes conocen esta acta, en orden canónico.
+          items: { type: string, enum: [siger, background, client_file] }
+        proof_document:
+          type: object
+          nullable: true
+          description: |
+            La copia del documento que tenemos. `origin` importa: `client_upload` es evidencia de que el cliente lo tiene; `siger_extraction` significa que nosotros lo bajamos del folio, así que el archivo es real pero **no** cuenta como cobertura del expediente.
+          properties:
+            item_id: { type: integer }
+            origin: { type: string, enum: [client_upload, siger_extraction] }
+            url: { type: string }
+        registry_entries:
+          type: array
+          description: Las inscripciones que el folio hizo para este instrumento. Un acta con dos inscripciones es una fila con dos entradas, no dos filas.
+          items: { $ref: "#/components/schemas/CorporateHistoryRegistryEntry" }
+        cites:
+          type: array
+          items: { type: string }
+          description: Números de acta que los antecedentes de **esta** acta refieren.
+        cited_by:
+          type: array
+          items: { type: string }
+          description: Actas cuyos antecedentes refieren a esta. Es lo que sostiene un acta que nadie subió.
+        changes:
+          type: array
+          items: { $ref: "#/components/schemas/CorporateHistoryChange" }
+        evidence:
+          type: array
+          description: Citas textuales que respaldan lo que se afirma de esta acta.
+          items: { $ref: "#/components/schemas/CorporateHistoryEvidence" }
+
+    CorporateHistoryRegistryEntry:
+      type: object
+      properties:
+        folio:
+          type: string
+          nullable: true
+          description: FME del folio que hizo la inscripción. Null cuando la fuente no lo nombró.
+        row:
+          type: integer
+          description: |
+            Renglón del acto dentro del folio. `folio` y `row` juntos son su identidad: los renglones se numeran por folio, así que en un acta inscrita en más de uno, `row` sólo identifica una entrada leído junto con `folio`. Por eso las referencias de `changes[].reported_by.registry_entries` traen las dos llaves.
+        page: { type: integer, nullable: true }
+        nci: { type: string, nullable: true }
+        label:
+          type: string
+          description: El acto tal como el registro lo nombró.
+        form:
+          type: string
+          nullable: true
+          description: Forma precodificada, código y etiqueta juntos.
+          example: "M2 - Asamblea"
+        mode: { type: string, nullable: true }
+        admitted_at:
+          type: string
+          format: date
+          nullable: true
+          description: Fecha de ingreso a ventanilla.
+        registered_at:
+          type: string
+          format: date
+          nullable: true
+          description: Fecha de inscripción.
+        modifications:
+          type: array
+          description: |
+            Las casillas que el folio marcó en verdadero, copiadas literalmente y **sin interpretar**. `type` es la redacción que el registro imprimió, no un nombre de campo: las etiquetas varían entre formas del mismo folio. Sirven para ver que un acto marca disolución aunque ninguna fuente la describa.
+          items:
+            type: object
+            properties:
+              type: { type: string }
+              value: { type: boolean }
+        proof_document_url: { type: string, nullable: true }
+
+    CorporateHistoryChange:
+      type: object
+      properties:
+        event_type:
+          type: string
+          description: |
+            Código del evento. El folio y los antecedentes usan **vocabularios disjuntos** (`modificacion_capital` vs `aumento_capital`) y no se fusionan: unirlos exigiría una tabla de equivalencias que deliberadamente no existe. Por eso ningún cambio trae las dos fuentes, y la corroboración cruzada se ve a nivel de acta, en `sources`.
+          example: modificacion_capital
+        description: { type: string }
+        sources:
+          type: array
+          items: { type: string, enum: [siger, background, client_file] }
+        reported_by:
+          type: object
+          description: |
+            Quién reportó el cambio. Nunca las dos listas a la vez: `registry_entries` solo la llena el folio y `citing_actas` solo los antecedentes, porque sus vocabularios de `event_type` son disjuntos y un cambio no se fusiona entre fuentes.
+          properties:
+            registry_entries:
+              type: array
+              description: |
+                Las inscripciones del folio que reportaron el cambio. Cada referencia resuelve contra `registry_entries` del acta por **las dos** llaves: los renglones se numeran por folio, así que en un acta inscrita en más de uno el `row` solo no identifica una entrada.
+              items:
+                type: object
+                properties:
+                  folio:
+                    type: string
+                    nullable: true
+                    description: FME del folio que hizo la inscripción. Null cuando la fuente no lo nombró.
+                  row:
+                    type: integer
+                    description: Renglón de la inscripción dentro de ese folio.
+              example:
+                [
+                  { folio: "N-2022032489", row: 2 },
+                  { folio: "N-2022032489", row: 3 },
+                ]
+            citing_actas:
+              type: array
+              items: { type: string }
+              description: Números de las actas cuyos antecedentes mencionan el cambio.
+              example: ["103930"]
+
+    CorporateHistoryEvidence:
+      type: object
+      properties:
+        cited_in:
+          type: string
+          description: Número del acta que contiene la cita.
+        cited_in_date:
+          type: string
+          format: date
+          nullable: true
+          description: Fecha del acta que cita, para poder ordenar dos versiones de un mismo hecho.
+        page: { type: string, nullable: true }
+        quote:
+          type: string
+          description: Texto literal de la fuente.
+
+    CorporateHistoryCoverage:
+      type: object
+      description: Hasta dónde vemos. Nunca afirma que el historial esté completo.
+      properties:
+        siger:
+          type: object
+          properties:
+            folios_queried:
+              type: array
+              items: { type: string }
+              description: FME de cada folio leído, en el orden en que SIGER los devolvió.
+            queried_at: { type: string, format: date-time, nullable: true }
+            entries_returned:
+              type: integer
+              description: Inscripciones que los folios devolvieron en total, antes de descartar ninguna.
+            folios_returned: { type: integer }
+            no_instrument_numbers:
+              type: boolean
+              description: |
+                Presente y en verdadero cuando el listado del folio se encontró pero sus documentos nunca se descargaron. Esas filas no traen número de instrumento, así que no se pueden agrupar ni cruzar con nada — pero sí se emiten: que no podamos cruzar una inscripción no es razón para ocultar que el registro la hizo.
+            filing_items_returned:
+              type: integer
+              description: Filas del listado, presente solo en el caso anterior.
+        background:
+          type: object
+          properties:
+            extracted_from:
+              type: array
+              items: { type: string }
+              description: Números de las actas cuyos antecedentes se leyeron. Un acta del expediente que no aparezca aquí es un acta cuyos antecedentes no se extrajeron.
+            records_unidentified:
+              type: integer
+              description: Registros que no nombraron un número de instrumento usable, así que describen un acta que no se puede ubicar. Se cuentan en vez de emitirse.
+            unreadable_extractions:
+              type: array
+              items: { type: string }
+              description: Actas cuya extracción existía pero no arrojó ningún registro legible. Se reporta porque una extracción que corrió y no produjo nada es un hueco en la cobertura, y un resultado vacío es indistinguible de un acta que genuinamente no cita nada.
+            numbers_corrected:
+              type: array
+              description: |
+                Números de instrumento que la extracción convirtió mal, corregidos a partir de la transcripción literal que ella misma escribió junto a ellos.
+
+                Los antecedentes suelen escribir el número en letra ("mil trescientos veintidós") y la extracción lo devuelve en dígitos y transcrito. Los dígitos se verifican contra una lectura determinística de las palabras, y cuando difieren gana la lectura.
+
+                Se reporta en vez de aplicarse en silencio porque la corrección cambia **qué acta es** esa fila: con qué inscripción del folio se cruza y qué documento se cuenta como faltante. Vacío para extracciones anteriores a que el prompt pidiera la transcripción, donde no hay contra qué verificar.
+              items:
+                type: object
+                properties:
+                  cited_in:
+                    type: string
+                    description: Acta cuyos antecedentes lo traían.
+                  literal:
+                    type: string
+                    description: El número tal como el documento lo imprime.
+                  reported:
+                    type: string
+                    description: Lo que la extracción escribió.
+                  corrected:
+                    type: string
+                    description: Lo que el literal realmente dice, y lo que el historial usa.
+        combined:
+          type: object
+          properties:
+            earliest_timeline_date:
+              { type: string, format: date, nullable: true }
+            latest_timeline_date: { type: string, format: date, nullable: true }
+            no_acta_after:
+              type: string
+              format: date
+              nullable: true
+              description: |
+                Fecha de asamblea del acta más reciente del expediente. Es un hecho sobre nuestros datos, no sobre la empresa: los antecedentes de un acta solo alcanzan hasta su propia asamblea, así que un cambio posterior a esta fecha no sería visible ni aunque hubiera ocurrido.
+
+    CorporateHistoryContribution:
+      type: object
+      description: Qué aportó cada fuente. `only_in_*` es lo que se habría perdido sin ella.
+      properties:
+        total_actas: { type: integer }
+        in_siger: { type: integer }
+        in_background: { type: integer }
+        in_client_file: { type: integer }
+        only_in_siger: { type: integer }
+        only_in_background: { type: integer }
+        only_in_client_file: { type: integer }
+
+    CorporateHistoryDocumentCheck:
+      type: object
+      description: |
+        Conteo objetivo del expediente, sin lista paralela y sin ranking. La lista de faltantes se deriva del historial: `history.filter(a => !a.sources.includes("client_file"))`. El criterio es la pertenencia a `sources`, no la presencia de `proof_document`: un acta que el cliente subió pero cuyo archivo no se pudo resolver sigue siendo un acta que tiene.
+      properties:
+        actas_in_history: { type: integer }
+        client_uploaded: { type: integer }
+        not_uploaded_by_client: { type: integer }
 
     V2PublicResponseDetails:
       type: object
@@ -5507,6 +6124,11 @@ components:
           type: object
           additionalProperties: true
           nullable: true
+          properties:
+            upload_url:
+              type: string
+              format: uri
+              description: URL firmada temporal para subir el archivo del item mediante PUT. Después de subirlo, confirma con options.uploaded_file en PUT /verification-items/{id}.
         item_ui_options:
           type: object
           additionalProperties: true
@@ -6090,6 +6712,20 @@ components:
           $ref: "#/components/schemas/CompanyCapital"
         source:
           $ref: "#/components/schemas/ShareholdersSource"
+        shareholders_unavailable_reason:
+          type: string
+          nullable: true
+          enum:
+            ["business_type_without_shareholders", "pending_extraction", null]
+          description: |
+            Por qué `shareholders` viene vacío: `business_type_without_shareholders` cuando el tipo de sociedad no tiene accionistas y la lista vacía es final, `pending_extraction` cuando hay un acta en extracción, `null` cuando no hay motivo que reportar. Los dos campos siempre están presentes: lo opcional es el valor, no su presencia. Nunca se omiten del objeto, ni siquiera cuando hay accionistas — en ese caso `shareholders_unavailable_reason` llega en `null`. Campo aditivo, disponible desde el 20 de agosto de 2026. Ver [Motivo cuando la lista de accionistas viene vacía](/guia-devs/uso-kyb/mexico/accionistas#motivo-sin-accionistas).
+          example: null
+        business_type:
+          type: string
+          nullable: true
+          description: |
+            Tipo de sociedad del que Trébol derivó el motivo, tal como está escrito en el documento. Campo aditivo, disponible desde el 20 de agosto de 2026.
+          example: "SOCIEDAD ANONIMA DE CAPITAL VARIABLE"
         verification:
           $ref: "#/components/schemas/VerificationSummary"
 
@@ -6317,7 +6953,7 @@ components:
               options:
                 type: object
                 description: |
-                  Opciones adicionales para el ítem. Para el origen del archivo envía `file_url` (URL descargable); si lo omites, Trébol devuelve una `upload_url` presignada (ver [flujo de carga directa](/guia-devs/crear-verificaciones/via-api/carga-directa)). `doc_splitter` es la excepción: requiere `file_url` en la creación.
+                  Opciones adicionales para el ítem. Para el origen del archivo envía `file_url` (URL descargable); si lo omites, Trébol devuelve una `upload_url` presignada (ver [flujo de carga directa](/guia-devs/crear-verificaciones/via-api/carga-directa)). Este flujo también aplica a `doc_splitter`: sube el archivo y confirma con `options.uploaded_file: true`.
                   Para referenciar un corte de un `doc_splitter` previo con `file_source: "item"` + `file_source_info`, usa [`PUT /verifications/{id}/add-items`](/api-reference/agregar-items-a-una-verificacion/agregar-items-a-una-verificación-existente) sobre una verificación existente: en `POST /verifications` no hay `doc_splitter` previo al que apuntar.
                 properties:
                   file_url:
