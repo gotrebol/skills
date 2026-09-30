@@ -514,10 +514,12 @@ paths:
       operationId: confirmarCargaDocumento
       tags:
         - Gestion de item Ids
-      summary: Confirmar la carga de un documento
+      summary: Confirmar la carga o reemplazar el archivo de un documento
       description: |
         Después de subir el archivo mediante PUT a `item_options.upload_url`, confirma la carga
-        para iniciar el procesamiento del item. Aplica a `generic`, `doc_validation`,
+        con `options.uploaded_file: true`. También puedes enviar `options.file_url` para
+        reemplazar el archivo o reintentar su procesamiento desde una URL descargable.
+        Aplica a `generic`, `doc_validation`,
         tipos de extracción de documentos y `doc_splitter`, incluidos los tipos
         personalizados habilitados para la cuenta. El procesamiento es asíncrono.
         Ver [Carga directa](/guia-devs/crear-verificaciones/via-api/carga-directa).
@@ -540,18 +542,42 @@ paths:
               properties:
                 options:
                   type: object
-                  required: [uploaded_file]
+                  anyOf:
+                    - required: [uploaded_file]
+                    - required: [file_url]
+                  allOf:
+                    - anyOf:
+                        - not:
+                            required: [file_password]
+                        - required: [uploaded_file]
+                          properties:
+                            uploaded_file:
+                              enum: [true]
+                        - required: [file_url]
                   properties:
                     uploaded_file:
                       type: boolean
-                      description: Si es true, confirma la carga e inicia el procesamiento. Si es false, no confirma ni inicia el procesamiento.
+                      description: Si es true, confirma la carga e inicia el procesamiento. Si es false, no confirma la carga; una file_url enviada en la misma solicitud sí puede iniciar el procesamiento.
                       example: true
+                    file_url:
+                      type: string
+                      minLength: 1
+                      description: URL descargable del archivo para reemplazarlo o reintentar su procesamiento. Envíala sin uploaded_file o con uploaded_file en false; conserva la URL disponible al menos 5 minutos.
+                      example: "https://example.com/documento.pdf"
+                    file_password:
+                      type: string
+                      minLength: 1
+                      maxLength: 128
+                      writeOnly: true
+                      description: |
+                        Contraseña del PDF subido, si está protegido. Envíala junto con `uploaded_file: true` (o con `file_url`); sin un archivo en la misma solicitud la API responde `400` con `code: invalid_item_options_file_password`. Trébol procesa la copia sin contraseña y conserva el original cifrado. Almacena la contraseña cifrada en la base de datos y no la devuelve en respuestas ni webhooks. Si es incorrecta, el ítem termina con `item_error: invalid_file_password`. Se ignora para archivos que no son PDF. Aplica por ítem.
+                      example: "clave-del-pdf"
             example:
               options:
                 uploaded_file: true
       responses:
         "200":
-          description: Solicitud procesada. Con uploaded_file en true, confirma el archivo y solicita el procesamiento; con false, no confirma la carga ni solicita el procesamiento.
+          description: Solicitud procesada. Con uploaded_file en true o una file_url, solicita el procesamiento del archivo. Con uploaded_file en false y sin file_url, no confirma la carga ni solicita el procesamiento.
           content:
             application/json:
               schema:
@@ -563,6 +589,8 @@ paths:
                     type: boolean
                     description: Indica si la actualización solicitó el procesamiento del item.
                     example: true
+        "400":
+          $ref: "#/components/responses/BadRequestError"
         "404":
           description: El item no existe o el archivo aún no está en el almacenamiento de carga.
           content:
@@ -1644,6 +1672,14 @@ paths:
                             type: string
                             description: URL de un archivo presignado que se puede descargar para el ítem a verificar.
                             example: "https://www.googleapis.com/downloadableFile"
+                          file_password:
+                            type: string
+                            minLength: 1
+                            maxLength: 128
+                            writeOnly: true
+                            description: |
+                              Contraseña del PDF cuando el archivo está protegido. Trébol abre el documento con ella al recibirlo, procesa la copia sin contraseña y conserva el archivo original cifrado. Trébol almacena la contraseña cifrada en la base de datos y no la devuelve en respuestas ni webhooks. Si la contraseña es incorrecta, el ítem termina con `item_error: invalid_file_password`. Se ignora para archivos que no son PDF. Aplica por ítem.
+                            example: "clave-del-pdf"
                           constancia_type:
                             type: string
                             description: Tipo de constancia para items csf_mx (opcional). Especifica si es para empresa o individuo.
@@ -3760,6 +3796,13 @@ components:
                 success: false
                 message: "The specified file_url is invalid. Ensure it is public and downloadable."
                 code: invalid_item_options_file_url
+                timestamp: "2025-01-01T12:34:56.000Z"
+            InvalidItemOptionsFilePassword:
+              summary: invalid_item_options_file_password
+              value:
+                success: false
+                message: "The file_password option must be a non-empty string."
+                code: invalid_item_options_file_password
                 timestamp: "2025-01-01T12:34:56.000Z"
     UnauthorizedError:
       description: No autorizado
@@ -6042,7 +6085,8 @@ components:
             Campo opcional que indica errores públicos relacionados con el procesamiento del ítem. Su valor depende del `item_type` que produjo el error.
 
             **Comunes a ítems documentales**
-            - `password_protected_pdf`: el PDF está protegido con contraseña y no puede procesarse.
+            - `password_protected_pdf`: el PDF está protegido con contraseña y no se envió `file_password`. Reenvía el archivo con `options.file_password`.
+            - `invalid_file_password`: se envió `file_password` pero el PDF la rechazó. Reenvía el archivo con la contraseña correcta.
             - `get_input_file_info_failed`: falló la obtención de información del archivo de entrada.
 
             **Específicos de `doc_splitter`** (ver [guía](/producto/guias/doc-splitter) para el listado completo)
@@ -6103,7 +6147,8 @@ components:
             Campo opcional que indica errores públicos relacionados con el procesamiento del ítem. Su valor depende del `item_type` que produjo el error.
 
             **Comunes a ítems documentales**
-            - `password_protected_pdf`: el PDF está protegido con contraseña y no puede procesarse.
+            - `password_protected_pdf`: el PDF está protegido con contraseña y no se envió `file_password`. Reenvía el archivo con `options.file_password`.
+            - `invalid_file_password`: se envió `file_password` pero el PDF la rechazó. Reenvía el archivo con la contraseña correcta.
             - `get_input_file_info_failed`: falló la obtención de información del archivo de entrada.
 
             **Específicos de `doc_splitter`** (ver [guía](/producto/guias/doc-splitter) para el listado completo)
@@ -6964,6 +7009,14 @@ components:
                     type: string
                     description: URL de un archivo presignado que se puede descargar para el ítem a verificar.
                     example: "https://www.somepresignedURL.com/downloadableFile"
+                  file_password:
+                    type: string
+                    minLength: 1
+                    maxLength: 128
+                    writeOnly: true
+                    description: |
+                      Contraseña del PDF cuando el archivo de `file_url` está protegido. Trébol abre el documento con ella al recibirlo, procesa la copia sin contraseña y conserva el archivo original cifrado. Trébol almacena la contraseña cifrada en la base de datos y no la devuelve en respuestas ni webhooks. Si es incorrecta, el ítem termina con `item_error: invalid_file_password`. Se ignora para archivos que no son PDF. Aplica por ítem.
+                    example: "clave-del-pdf"
                   people_scope:
                     type: array
                     description: Especifica el alcance de las personas que deben ser consideradas en la verificación.

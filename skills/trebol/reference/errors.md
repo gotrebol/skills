@@ -6,6 +6,7 @@
 |---|---|---|---|
 | `VALIDATION_ERROR` | 400 | Body con datos faltantes o inválidos | Revisa el `message`, corrige el payload |
 | `BAD_REQUEST` | 400 | Solicitud mal formada | Revisa headers, content-type, body |
+| `invalid_item_options_file_password` | 400 | Contraseña vacía, no textual o mayor a 128 caracteres; en `PUT /verification-items/{id}`, contraseña sin `file_url` ni `uploaded_file: true` en la misma solicitud | Envía texto de 1 a 128 caracteres y, en el PUT, incluye el origen del archivo. Consulta [los ejemplos y reintentos](/guia-devs/crear-verificaciones/via-api/carga-directa#pdf-protegido-con-contrasena) |
 | `UNAUTHORIZED` | 401 | API key ausente o inválida | Revisa header `x-api-key`, regenera key si fue revocada |
 | `FORBIDDEN` | 403 | Key sin permisos para la acción | Pide al admin que asigne permisos |
 | `NOT_FOUND` | 404 | Recurso no existe | Verifica IDs (verification_id, tag, etc.) |
@@ -32,7 +33,8 @@ Los webhooks `verification_item.v2.completed` y `verification_item.v2.internal_s
 
 | `item_error` | Causa | Qué decirle al usuario |
 |---|---|---|
-| `password_protected_pdf` | PDF protegido con contraseña | "El archivo está protegido. Súbelo sin contraseña." |
+| `password_protected_pdf` | PDF protegido con contraseña y no se envió `options.file_password` | "El archivo está protegido. Reenvíalo indicando su contraseña." |
+| `invalid_file_password` | Se envió `options.file_password` pero el PDF la rechazó | "La contraseña del archivo es incorrecta. Reenvíalo con la contraseña correcta." |
 | `get_input_file_info_failed` | Trébol no pudo leer el archivo | "El archivo no se pudo procesar. Verifica que sea un PDF/imagen válido." |
 
 ### Ejemplo de manejo
@@ -42,7 +44,11 @@ function handleItemCompleted(event) {
   const { item_error, item_type, verification_id, item_id } = event.data;
   
   if (item_error === 'password_protected_pdf') {
-    notifyUser(verification_id, 'PDF protegido — sube sin contraseña');
+    notifyUser(verification_id, 'PDF protegido — reenvíalo con options.file_password');
+    return;
+  }
+  if (item_error === 'invalid_file_password') {
+    notifyUser(verification_id, 'Contraseña del PDF incorrecta — reenvíalo con la correcta');
     return;
   }
   if (item_error === 'get_input_file_info_failed') {

@@ -60,7 +60,7 @@ Trébol recalculó los **hallazgos** de la Síntesis de Dictamen: lo que le falt
 
 ### `verification_item.v2.completed`
 Un item específico completó su procesamiento. Contiene `item_error` si hubo problema. Códigos comunes:
-- **Documentales**: `password_protected_pdf` (PDF con contraseña), `get_input_file_info_failed` (falló al leer el archivo).
+- **Documentales**: `password_protected_pdf` (PDF con contraseña y sin `options.file_password`), `invalid_file_password` (la `file_password` enviada no abre el PDF), `get_input_file_info_failed` (falló al leer el archivo).
 - **`doc_splitter`**: `unsupported_file_type`, `unknown_custom_item_type`, `misconfigured_custom_item_type`, `no_splits_returned`, `pdf_slice_failed`, `pdf_slice_upload_failed`, `doc_splitter_request_failed` (ver detalle en la guía de `doc_splitter`).
 - **`doc_validation`**: `invalid_document_type`, `ruleset_validation_failed`.
 

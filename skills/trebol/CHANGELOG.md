@@ -4,6 +4,17 @@ Historial de cambios al skill de Trébol distribuido vía [skills.sh](https://ww
 
 Los integradores pueden preguntarle a su asistente con IA *"¿qué cambió en la última versión del skill de Trébol?"* y recibir un resumen consultando este archivo.
 
+## 2026-09-29
+
+- **Nueva opción de ítem `file_password`**: los PDF protegidos con contraseña ya se pueden procesar sin desbloquearlos antes. Envía `options.file_password` junto con `file_url` (en `POST /verifications` y `PUT /verifications/{verification-id}/add-items`) o junto con `uploaded_file: true` en `PUT /verification-items/{id}`. Impacto en integraciones:
+  - **Por ítem**: la contraseña aplica solo al ítem donde se envía. Entre 1 y 128 caracteres.
+  - **Nunca se devuelve**: no aparece en respuestas de la API, en `item_options` ni en webhooks, y Trébol la almacena cifrada en la base de datos.
+  - **Nuevo `item_error: invalid_file_password`** cuando la contraseña no abre el PDF. `password_protected_pdf` ahora significa "PDF cifrado y no se envió contraseña"; en ambos casos reenvía el archivo con la contraseña correcta.
+  - **Nuevo `400` `invalid_item_options_file_password`** si la contraseña está vacía, no es texto, excede el largo o llega al `PUT` sin `uploaded_file`/`file_url`.
+  - Solo aplica a PDF; para imágenes se ignora. Trébol conserva el archivo original cifrado y procesa una copia sin contraseña.
+  - **Reintentos con URL**: envía `file_url` y la contraseña correcta en `PUT /verification-items/{id}` sobre el mismo item, sin `uploaded_file: true`.
+  - Documentado en [Carga directa](/guia-devs/crear-verificaciones/via-api/carga-directa#pdf-protegido-con-contrasena), `reference/errors.md` y el OpenAPI.
+
 ## 2026-09-22
 
 - **`key_people` ya no incluye las menciones sin poderes.** Una mención es un rol con evento `mentioned`: el acta nombra a la persona con ese rol. Una mención no tiene poderes si ningún elemento de su arreglo `powers` tiene `has_power` en `true`. Antes estas menciones aparecían en `key_people` sin poderes y se confundían con un error de extracción. Aplica a todas las verificaciones, incluidas las ya finalizadas, porque el filtro se aplica al leer. Impacto en integraciones:
