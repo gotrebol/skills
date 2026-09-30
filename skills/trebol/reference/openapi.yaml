@@ -4852,7 +4852,7 @@ components:
 
     V2RoleEventName:
       type: string
-      description: Evento normalizado que originó el rol.
+      description: Evento normalizado que originó el rol. Un rol `mentioned` indica que el acta menciona a la persona con ese rol. En `key_people`, solo se incluye si al menos un elemento de `powers` tiene `has_power` en `true`. En `signatory_groups` se incluye siempre.
       enum: ["addition", "mentioned", "renewal", "removal"]
 
     V2KeyPersonRole:
@@ -6572,7 +6572,9 @@ components:
       properties:
         role_name: { type: string }
         group_name: { type: string }
-        event: { type: string }
+        event:
+          type: string
+          description: Evento que originó el rol. Un rol `mentioned` indica que el acta menciona a la persona con ese rol. Solo se incluye si al menos un elemento de `powers` tiene `has_power` en `true`.
         duration: { type: number }
         powers:
           type: array
@@ -6672,7 +6674,9 @@ components:
         id_number_rfc: { type: string, nullable: true }
         idType: { type: string }
         roleName: { type: string }
-        event: { type: string }
+        event:
+          type: string
+          description: Evento que originó el rol. `signatory_groups` incluye también las menciones (`mentioned`) sin poderes.
         duration: { type: number }
         sourceLines:
           type: array

@@ -4,6 +4,15 @@ Historial de cambios al skill de Trébol distribuido vía [skills.sh](https://ww
 
 Los integradores pueden preguntarle a su asistente con IA *"¿qué cambió en la última versión del skill de Trébol?"* y recibir un resumen consultando este archivo.
 
+## 2026-09-22
+
+- **`key_people` ya no incluye las menciones sin poderes.** Una mención es un rol con evento `mentioned`: el acta nombra a la persona con ese rol. Una mención no tiene poderes si ningún elemento de su arreglo `powers` tiene `has_power` en `true`. Antes estas menciones aparecían en `key_people` sin poderes y se confundían con un error de extracción. Aplica a todas las verificaciones, incluidas las ya finalizadas, porque el filtro se aplica al leer. Impacto en integraciones:
+  - **Aplica a v1 y v2**: `GET /v2/verifications/{verification-id}/people`, `GET /verifications/{verification-id}/people` y `GET /companies/{etiqueta}/people`. Las descripciones de `V2RoleEventName` y `KeyPeopleRole.event` lo documentan.
+  - **`key_people[].roles[]`**: Trébol omite las menciones sin poderes. Si todos los roles de una persona eran de ese tipo, la persona no aparece en `key_people`. Una mención con al menos un poder se sigue devolviendo.
+  - **Sin cambios**: `signatory_groups`, que sigue incluyendo las menciones aunque no tengan poderes; `full_list`; y los items crudos de `GET /verifications/{verification-id}` (`item_value.signatories[].roles`).
+  - Si cruzas `key_people` con `signatory_groups` o `full_list`, una persona puede aparecer en estos y no en `key_people`.
+  - Spec, guía de firmantes (con un ejemplo) y copia del skill sincronizadas.
+
 ## 2026-09-03
 
 - **Nuevo evento de webhook `verification.v2.findings.updated`**: Trébol ahora notifica cada vez que recalcula los hallazgos de la Síntesis de Dictamen, sin esperar a que la verificación termine. Es opt-in: hay que incluirlo en el array `events` al crear o actualizar el webhook. Impacto en integraciones:
