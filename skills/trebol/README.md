@@ -18,6 +18,7 @@ skills.sh detecta automáticamente tu editor con IA y configura el skill. Despu�
 
 - **Autenticación**: cómo usar `x-api-key`, gestión y rotación de keys
 - **Flujos por caso de uso**: KYB México (detallado), KYB Colombia, KYB EEUU, hipotecas y nómina (todos en Beta los últimos tres), widget, webhooks
+- **RFC de prueba**: verificaciones KYB México con respuesta fija para probar la integración sin costo
 - **Referencia**: endpoints más usados y errores comunes
 - **OpenAPI**: especificación completa para consultas detalladas (cubre todos los endpoints/casos, incluso si no hay walk-through curado)
 
@@ -57,6 +58,7 @@ El skill empaqueta versiones curadas de varios documentos canónicos del repo `g
 | `flows/hipotecas.md` | `guia-devs/uso-hipotecas/*.mdx` (stub: links + tips) |
 | `flows/nomina.md` | `guia-devs/uso-nomina/*.mdx` (stub: links + tips) |
 | `flows/widget.md` | `guia-devs/crear-verificaciones/via-widget/*.mdx` (versión curada) |
+| `flows/rfc-de-prueba.md` | `guia-devs/pruebas/rfc-de-prueba.mdx` (versión curada) |
 | `auth.md` | `guia-devs/conectarse.mdx` y `guia-devs/gestion-api-keys.mdx` |
 | `reference/endpoints.md` | Resumen de top endpoints del openapi |
 | `reference/errors.md` | `guia-devs/errores.mdx` y troubleshooting derivado |

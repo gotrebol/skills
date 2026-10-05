@@ -141,6 +141,8 @@ curl -X POST "https://api.gotrebol.com/verifications" \
 
 Si todo está bien, recibes status `201` con un `id` UUID. Apunta a ese ID para cruzar con los webhooks que llegarán después.
 
+💡 Para probar sin consultar fuentes reales ni gastar créditos, usa uno de los RFC de prueba (`TRB010101OK1`, `TRB010101NF1`, `TRB010101ER1`). Ver `flows/rfc-de-prueba.md`.
+
 ## Ejemplo 2 — Con documentos: clasificación automática
 
 ```json

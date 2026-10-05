@@ -4,6 +4,16 @@ Historial de cambios al skill de Trébol distribuido vía [skills.sh](https://ww
 
 Los integradores pueden preguntarle a su asistente con IA *"¿qué cambió en la última versión del skill de Trébol?"* y recibir un resumen consultando este archivo.
 
+## 2026-09-30
+
+- **RFC de prueba para KYB México**: tres RFC crean una verificación completa con una respuesta fija, sin consultar fuentes externas y sin cobro. Sirven para probar la integración, los webhooks y el manejo de errores sin documentos reales. Impacto en integraciones:
+  - **`TRB010101OK1`** (todo encontrado, 22 ítems), **`TRB010101NF1`** (no encontrado, 17 ítems) y **`TRB010101ER1`** (error técnico, 17 ítems).
+  - Se crean con `POST /verifications` normal. Trébol valida el cuerpo y después reemplaza los ítems por los del escenario; los archivos enviados se ignoran.
+  - La verificación avanza en el tiempo y llega a `finished` en unos 2 minutos y medio, así que también sirve para probar respuestas parciales (`pending_extraction`).
+  - Nuevo archivo `flows/rfc-de-prueba.md`, con lo que devuelve cada escenario y cómo distinguir «no encontrado» de «error técnico»; nueva sección en `reference/errors.md`.
+- **Falla de SIGER**: el valor que emite hoy una consulta SIGER fallida es `item_internal_status: "siger_not_found_ops_forced"`. `siger_error`, `siger_scrap_failed` y `siger_documents_scrap_failed` también indican falla. No lo confundas con `siger_not_found`, que es un resultado definitivo.
+- OpenAPI sincronizado: ejemplo `RfcDePrueba` en `POST /verifications`, ejemplos por escenario en `GET /verification-items/{id}` y en `shareholders`.
+
 ## 2026-09-29
 
 - **Nueva opción de ítem `file_password`**: los PDF protegidos con contraseña ya se pueden procesar sin desbloquearlos antes. Envía `options.file_password` junto con `file_url` (en `POST /verifications` y `PUT /verifications/{verification-id}/add-items`) o junto con `uploaded_file: true` en `PUT /verification-items/{id}`. Impacto en integraciones:

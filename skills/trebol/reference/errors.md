@@ -71,6 +71,18 @@ El webhook `verification_people.curp_search_completed` puede incluir `people_err
 | `curp_scrapper_error` | Error extrayendo info del servicio externo | Reintentar más tarde, posiblemente RENAPO caído |
 | `curp_service_unavailable` | Servicio de RENAPO no disponible | Reintentar con backoff |
 
+## Consultas públicas: «no encontrado» contra «falla técnica»
+
+La API responde `200` y el ítem queda en `item_status: "complete"` en los dos casos. La diferencia está dentro del ítem:
+
+| Fuente | No encontrado (definitivo) | Falla técnica (crear el ítem de nuevo) |
+|---|---|---|
+| SIGER | `item_internal_status: "siger_not_found"` | `item_internal_status: "siger_not_found_ops_forced"` (también `siger_error`, `siger_scrap_failed`, `siger_documents_scrap_failed`) |
+| SAT | `validation_result.reason: "rfc_not_found"` | `validation_result.reason: "scraper_error"` |
+| INE | `ine_validation_result: "invalid_id"` | `ine_validation_result: "maximum_retries_reached"` |
+
+Para reproducir ambos casos sin costo, usa los RFC de prueba `TRB010101NF1` (no encontrado) y `TRB010101ER1` (falla técnica). Ver `flows/rfc-de-prueba.md`.
+
 ## Errores específicos de items KYB
 
 ### `unknown` (clasificación falló)

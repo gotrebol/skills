@@ -66,6 +66,8 @@ paths:
         Inicia una nueva verificación con los documentos especificados.
 
         **Nota:** Este endpoint permite crear verificaciones de empresas con documentos y configuraciones personalizadas.
+
+        **RFC de prueba:** con `tax_id` igual a `TRB010101OK1`, `TRB010101NF1` o `TRB010101ER1`, la verificación se resuelve con una respuesta fija de KYB México, sin consultar fuentes externas y sin cobro. Trébol reemplaza los items enviados por los del escenario. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -126,6 +128,20 @@ paths:
                     - type: "cit_contrato_arrendamiento"
                       options:
                         file_url: "https://www.somepresignedURL.com/withDownloadableFile"
+              RfcDePrueba:
+                summary: Usando un RFC de prueba
+                description: |
+                  Crea una verificación de prueba del escenario A (todo encontrado). Usa `TRB010101NF1` para el escenario B (no encontrado) o `TRB010101ER1` para el C (error técnico).
+                  Los items se validan y después se reemplazan por los 22 (A) o 17 (B y C) del escenario; los archivos enviados se ignoran.
+                  Consulta la guía [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
+                value:
+                  country: "mx"
+                  tag: "prueba-escenario-a"
+                  tax_id: "TRB010101OK1"
+                  items:
+                    - type: "ac_mx"
+                      options:
+                        file_url: "https://example.com/acta.pdf"
       responses:
         "201":
           description: Verificación creada exitosamente.
@@ -679,6 +695,107 @@ paths:
                               start_date: "2026-02-01"
                               contract_duration: "12 meses"
                     original_file_url: "https://files.gotrebol.com/66b4b55e-0e4f-42ec-9727-2bff88965562/31544_original_file.pdf"
+                RfcDePruebaSatNoEncontrado:
+                  summary: "RFC de prueba B: SAT no encuentra el RFC"
+                  description: |
+                    Escenario B (`TRB010101NF1`). La consulta corrió bien y el SAT no tiene el RFC: es un resultado definitivo. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
+                  value:
+                    id: 34173
+                    item_order: 15
+                    item_status: "complete"
+                    item_type: "public_sat_signatures"
+                    item_internal_status: "screenshot_taken"
+                    item_value:
+                      tax_ids: ["TRB010101NF1"]
+                      data:
+                        TRB010101NF1:
+                          status: "fail"
+                          tax_id_number: "TRB010101NF1"
+                          legal_name: ""
+                          business_type: ""
+                          certificates: []
+                          validation_result:
+                            success: false
+                            reason: "rfc_not_found"
+                          validated_at: "2026-09-10T12:00:30.000Z"
+                          scraped_at: "2026-09-10T12:00:30.000Z"
+                          screenshot_at: "2026-09-10 12:00:31"
+                          screenshot_url: "https://files.gotrebol.com/mx/sat/screenshots/900016/TRB010101NF1/demo.jpg"
+                    tag: null
+                    item_scope: "advanced"
+                    tags: {}
+                RfcDePruebaSatFallaTecnica:
+                  summary: "RFC de prueba C: falla técnica del SAT"
+                  description: |
+                    Escenario C (`TRB010101ER1`). La consulta al SAT falló por un problema técnico: vale la pena crear el ítem de nuevo. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
+                  value:
+                    id: 34188
+                    item_order: 15
+                    item_status: "complete"
+                    item_type: "public_sat_signatures"
+                    item_internal_status: "sat_scrap_failed"
+                    item_value:
+                      tax_ids: ["TRB010101ER1"]
+                      data:
+                        TRB010101ER1:
+                          status: "fail"
+                          tax_id_number: "TRB010101ER1"
+                          legal_name: ""
+                          business_type: ""
+                          certificates: []
+                          validation_result:
+                            success: false
+                            reason: "scraper_error"
+                          validated_at: "2026-09-10T12:00:30.000Z"
+                          scraped_at: "2026-09-10T12:00:30.000Z"
+                          screenshot_at: "2026-09-10 12:00:31"
+                          screenshot_url: "https://files.gotrebol.com/mx/sat/screenshots/900016/TRB010101ER1/demo.jpg"
+                    tag: null
+                    item_scope: "advanced"
+                    tags: {}
+                RfcDePruebaSigerNoEncontrado:
+                  summary: "RFC de prueba B: SIGER no encuentra la empresa"
+                  description: |
+                    Escenario B (`TRB010101NF1`). Resultado definitivo. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
+                  value:
+                    id: 34172
+                    item_order: 14
+                    item_status: "complete"
+                    item_type: "siger"
+                    item_internal_status: "siger_not_found"
+                    item_value: {}
+                    tag: null
+                    item_scope: "advanced"
+                    tags: {}
+                RfcDePruebaSigerFalla:
+                  summary: "RFC de prueba C: falla de SIGER"
+                  description: |
+                    Escenario C (`TRB010101ER1`). La consulta a SIGER no pudo completarse. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
+                  value:
+                    id: 34187
+                    item_order: 14
+                    item_status: "complete"
+                    item_type: "siger"
+                    item_internal_status: "siger_not_found_ops_forced"
+                    item_value: {}
+                    tag: null
+                    item_scope: "advanced"
+                    tags: {}
+                RfcDePruebaDocumentoIlegible:
+                  summary: "RFC de prueba C: documento que no se pudo leer"
+                  description: |
+                    Escenario C (`TRB010101ER1`). `item_status` sigue en `complete`: el fallo se lee en `item_error`. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
+                  value:
+                    id: 34170
+                    item_order: 0
+                    item_status: "complete"
+                    item_type: "ac_mx"
+                    item_internal_status: null
+                    item_error: "get_input_file_info_failed"
+                    item_value: {}
+                    tag: null
+                    item_scope: "advanced"
+                    tags: {}
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "404":
@@ -1014,6 +1131,42 @@ paths:
                   $ref: "#/components/examples/V2DetailsExample"
                 shareholders:
                   $ref: "#/components/examples/V2ShareholdersExample"
+                shareholders-rfc-prueba-en-curso:
+                  summary: "shareholders: RFC de prueba recién creado"
+                  description: |
+                    Cualquiera de los tres [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba) mientras las actas se extraen. Vuelve a consultar: la lista se llena al terminar la extracción.
+                  value:
+                    success: true
+                    data:
+                      shareholders: []
+                      source: null
+                      capital: null
+                      shareholders_unavailable_reason: "pending_extraction"
+                      business_type: null
+                    meta:
+                      section: "shareholders"
+                      verification:
+                        id: "115de6ab-0f99-468b-80a4-72bc1f9aa7c9"
+                        tag: "prueba-escenario-a"
+                        status: "pending"
+                shareholders-rfc-prueba-b:
+                  summary: "shareholders: RFC de prueba B (sociedad cooperativa)"
+                  description: |
+                    Escenario B (`TRB010101NF1`). Una sociedad cooperativa no tiene accionistas: la lista vacía es la respuesta final. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
+                  value:
+                    success: true
+                    data:
+                      shareholders: []
+                      source: null
+                      capital: null
+                      shareholders_unavailable_reason: "business_type_without_shareholders"
+                      business_type: "SOCIEDAD COOPERATIVA LIMITADA"
+                    meta:
+                      section: "shareholders"
+                      verification:
+                        id: "bdb0063e-ba71-4fb3-8cb1-0f5293a10677"
+                        tag: "prueba-escenario-b"
+                        status: "finished"
                 people:
                   $ref: "#/components/examples/V2PeopleExample"
                 documents:
