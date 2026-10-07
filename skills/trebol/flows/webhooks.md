@@ -4,7 +4,7 @@
 
 Trébol procesa documentos en background. Los webhooks te notifican cuando algo termina (item completado, verificación finalizada, CURP encontrada, etc.) sin que tengas que hacer polling.
 
-Para probar tu receptor sin una verificación real, crea una con un RFC de prueba (`TRB010101OK1`, `TRB010101NF1`, `TRB010101ER1`): emite sus eventos igual que en producción. Ver `flows/rfc-de-prueba.md`.
+Para probar tu receptor sin una verificación real, crea una con un RFC de prueba (`TRB010101OK1`, `TRB010101NF1`, `TRB010101ER1`, `TRB010101DV1`, `TRB010101RF1`): emite sus eventos igual que en producción. Ver `flows/rfc-de-prueba.md`.
 
 ## Crear un webhook
 

@@ -1,7 +1,7 @@
 ---
 name: trebol
 description: Integración con la API de Trébol para automatizar procesos de back office (KYB y más). Cubre endpoints, autenticación, items, account-flows, widget, webhooks y errores.
-last_updated: 2026-09-30
+last_updated: 2026-10-06
 ---
 
 # Trébol — Integración API
@@ -59,7 +59,7 @@ Lee según la pregunta del usuario:
 - `flows/nomina.md` — Payroll lending: extracción de recibos de nómina/pensión (Beta)
 - `flows/widget.md` — Instalación y configuración del widget
 - `flows/webhooks.md` — Registrar webhooks, validar HMAC, manejo de reintentos
-- `flows/rfc-de-prueba.md` — Los tres RFC de prueba (`TRB010101OK1`, `TRB010101NF1`, `TRB010101ER1`), qué responde cada escenario y cómo distinguir «no encontrado» de «error técnico»
+- `flows/rfc-de-prueba.md` — Los cinco RFC de prueba (`TRB010101OK1`, `TRB010101NF1`, `TRB010101ER1`, `TRB010101DV1`, `TRB010101RF1`), qué responde cada escenario, cómo distinguir «no encontrado» de «error técnico» y cómo llega un `doc_validation` que no pasa
 - `reference/endpoints.md` — Tabla de los endpoints más usados
 - `reference/errors.md` — Errores comunes y cómo manejarlos
 - `reference/openapi.yaml` — Snapshot de la especificación OpenAPI completa (consulta para detalles de schemas)
@@ -86,7 +86,7 @@ Lee según la pregunta del usuario:
 7. **URLs de documentos**: `file_url` debe estar accesible al menos 5 minutos. Trébol descarga el archivo, no lo reusa.
 8. **Idempotencia**: los webhooks pueden duplicarse. Usa la firma `v1=` del header `Trebol-Signature` como clave de deduplicación — es única por evento. Detalle en `flows/webhooks.md` y en la guía oficial `guia-devs/webhooks.mdx`.
 9. **Sandbox**: la API solo documenta el prefijo `treb_sk_live_`. Si el usuario pregunta por sandbox, dile que confirme con Trébol antes de inventar prefijos.
-10. **Probar sin costo**: si el integrador quiere probar su integración, sus webhooks o el manejo de errores de SIGER/SAT sin gastar créditos ni usar documentos reales, recomiéndale los RFC de prueba en su cuenta de prueba. Lee `flows/rfc-de-prueba.md`. No inventes otros RFC de prueba: solo existen esos tres.
+10. **Probar sin costo**: si el integrador quiere probar su integración, sus webhooks, el manejo de errores de SIGER/SAT o el resultado de un `doc_validation` sin gastar créditos ni usar documentos reales, recomiéndale los RFC de prueba en su cuenta de prueba. Lee `flows/rfc-de-prueba.md`. No inventes otros RFC de prueba: solo existen esos cinco.
 
 ## Plantillas de dictamen (pipeline de configuración)
 

@@ -141,7 +141,7 @@ curl -X POST "https://api.gotrebol.com/verifications" \
 
 Si todo está bien, recibes status `201` con un `id` UUID. Apunta a ese ID para cruzar con los webhooks que llegarán después.
 
-💡 Para probar sin consultar fuentes reales ni gastar créditos, usa uno de los RFC de prueba (`TRB010101OK1`, `TRB010101NF1`, `TRB010101ER1`). Ver `flows/rfc-de-prueba.md`.
+💡 Para probar sin consultar fuentes reales ni gastar créditos, usa uno de los RFC de prueba (`TRB010101OK1`, `TRB010101NF1`, `TRB010101ER1`, `TRB010101DV1`, `TRB010101RF1`). Ver `flows/rfc-de-prueba.md`.
 
 ## Ejemplo 2 — Con documentos: clasificación automática
 
@@ -200,6 +200,8 @@ Si todo está bien, recibes status `201` con un `id` UUID. Apunta a ese ID para 
 ```
 
 `client_item_type` es **obligatorio** en `doc_validation`. `ruleset` es opcional.
+
+💡 Para ver sin costo cómo llega un `doc_validation` que pasa, que no cumple una regla o que recibe un documento de otro tipo, usa el RFC de prueba `TRB010101DV1`. Ver `flows/rfc-de-prueba.md`.
 
 ## Ejemplo 3b — Solo extracción directa
 

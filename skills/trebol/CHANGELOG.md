@@ -4,6 +4,14 @@ Historial de cambios al skill de Trébol distribuido vía [skills.sh](https://ww
 
 Los integradores pueden preguntarle a su asistente con IA *"¿qué cambió en la última versión del skill de Trébol?"* y recibir un resumen consultando este archivo.
 
+## 2026-10-06
+
+- **Dos RFC de prueba nuevos**: además de A, B y C, dos escenarios que reproducen un solo flujo. Siguen sin consultar fuentes externas y sin cobro. Impacto en integraciones:
+  - **`TRB010101DV1`** (D · validación de documentos, 4 ítems `doc_validation`): uno pasa, dos no cumplen su regla (`vr_trebol_antiguedad` y `vr_trebol_vencimiento`) y uno recibe un documento de otro tipo. Llega a `finished` en ~1 minuto.
+  - **`TRB010101RF1`** (E · consulta de RFC, 4 ítems sin documentos): SAT de la empresa, SAT de su representante legal, SIGER con seis actos y `siger_shareholders` con las empresas relacionadas de los socios. Llega a `finished` en ~45 s, con los dos SAT; `siger` y `siger_shareholders` se completan después.
+  - Un `doc_validation` que no pasa trae `item_internal_status: "validation_failed"` **sin `item_error`**: el motivo se lee en `item_type_validation_result` y `rules_validation_result`. Solo las reglas personalizadas devuelven `validation_rule`.
+  - `flows/rfc-de-prueba.md` documenta los dos escenarios; ahora hay cinco RFC de prueba.
+
 ## 2026-09-30
 
 - **RFC de prueba para KYB México**: tres RFC crean una verificación completa con una respuesta fija, sin consultar fuentes externas y sin cobro. Sirven para probar la integración, los webhooks y el manejo de errores sin documentos reales. Impacto en integraciones:

@@ -67,7 +67,7 @@ paths:
 
         **Nota:** Este endpoint permite crear verificaciones de empresas con documentos y configuraciones personalizadas.
 
-        **RFC de prueba:** con `tax_id` igual a `TRB010101OK1`, `TRB010101NF1` o `TRB010101ER1`, la verificación se resuelve con una respuesta fija de KYB México, sin consultar fuentes externas y sin cobro. Trébol reemplaza los items enviados por los del escenario. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
+        **RFC de prueba:** con `tax_id` igual a `TRB010101OK1`, `TRB010101NF1`, `TRB010101ER1`, `TRB010101DV1` o `TRB010101RF1`, la verificación se resuelve con una respuesta fija de KYB México, sin consultar fuentes externas y sin cobro. Trébol reemplaza los items enviados por los del escenario. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -131,8 +131,8 @@ paths:
               RfcDePrueba:
                 summary: Usando un RFC de prueba
                 description: |
-                  Crea una verificación de prueba del escenario A (todo encontrado). Usa `TRB010101NF1` para el escenario B (no encontrado) o `TRB010101ER1` para el C (error técnico).
-                  Los items se validan y después se reemplazan por los 22 (A) o 17 (B y C) del escenario; los archivos enviados se ignoran.
+                  Crea una verificación de prueba del escenario A (todo encontrado). Usa `TRB010101NF1` para el escenario B (no encontrado), `TRB010101ER1` para el C (error técnico), `TRB010101DV1` para el D (validación de documentos) o `TRB010101RF1` para el E (consulta de RFC).
+                  Los items se validan y después se reemplazan por los 22 (A), 17 (B y C) o 4 (D y E) del escenario; los archivos enviados se ignoran.
                   Consulta la guía [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
                 value:
                   country: "mx"
@@ -793,6 +793,87 @@ paths:
                     item_internal_status: null
                     item_error: "get_input_file_info_failed"
                     item_value: {}
+                    tag: null
+                    item_scope: "advanced"
+                    tags: {}
+                RfcDePruebaReglaNoCumplida:
+                  summary: "RFC de prueba D: documento que no cumple su regla"
+                  description: |
+                    Escenario D (`TRB010101DV1`). El tipo es correcto pero la regla no se cumple. No hay `item_error`: el motivo se lee en `rules_validation_result`. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
+                  value:
+                    id: 34201
+                    item_order: 0
+                    item_status: "complete"
+                    item_type: "doc_validation"
+                    item_internal_status: "validation_failed"
+                    item_value:
+                      rules_validation_result:
+                        - id: "vr_trebol_antiguedad"
+                          variable_value: "2026-01-10"
+                          validation_result: false
+                      item_type_validation_result:
+                        - validation_result: true
+                          reason: "The document is a \"Constancia de Situación Fiscal\" issued by the \"SERVICIO DE ADMINISTRACIÓN TRIBUTARIA\" for a persona moral, with the RFC, \"idCIF\", tax regime, fiscal address and a QR code, which are all strong indicators of a CSF."
+                    tag: null
+                    item_scope: "advanced"
+                    tags: {}
+                RfcDePruebaTipoIncorrecto:
+                  summary: "RFC de prueba D: documento de otro tipo"
+                  description: |
+                    Escenario D (`TRB010101DV1`). Se esperaba un estado de cuenta y llegó un recibo de CFE: falla la validación del tipo aunque la regla se cumpla. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
+                  value:
+                    id: 34204
+                    item_order: 3
+                    item_status: "complete"
+                    item_type: "doc_validation"
+                    item_internal_status: "validation_failed"
+                    item_value:
+                      rules_validation_result:
+                        - id: "vr_trebol_antiguedad"
+                          variable_value: "2026-08-05"
+                          validation_result: true
+                      item_type_validation_result:
+                        - validation_result: false
+                          reason: "The document is a CFE electricity bill (\"Comisión Federal de Electricidad\") for \"COMERCIALIZADORA TRÉBOL DEMO, S.A. DE C.V.\", with the service number, billing period, consumption history and amount due. It is a proof of address, not a bank statement: it has no bank name, CLABE, account number or transaction detail."
+                    tag: null
+                    item_scope: "advanced"
+                    tags: {}
+                RfcDePruebaSatRepresentante:
+                  summary: "RFC de prueba E: SAT del representante legal"
+                  description: |
+                    Escenario E (`TRB010101RF1`). El item `representatives` consulta el RFC que nombran los certificados de la empresa en `legalRepresentativeRFC`, no el de la empresa. Ver [RFC de prueba](/guia-devs/pruebas/rfc-de-prueba).
+                  value:
+                    id: 34211
+                    item_order: 1
+                    item_status: "complete"
+                    item_type: "public_sat_signatures"
+                    item_internal_status: "screenshot_taken"
+                    item_value:
+                      tax_ids: ["RUTD800515AB2"]
+                      data:
+                        RUTD800515AB2:
+                          status: "success"
+                          tax_id_number: "RUTD800515AB2"
+                          legal_name: "DIEGO ALBERTO RUIZ TORRES"
+                          business_type: ""
+                          certificates:
+                            - numeroSerie: "00001000000700912351"
+                              estado: "Activo"
+                              tipo: "FIEL"
+                              fechaInicial: "2026-04-06T19:05:09.000Z"
+                              fechaFinal: "2030-04-06T19:05:49.000Z"
+                              personEmail: "firmante@demo.mx"
+                              serieLink: "https://rdc.sat.gob.mx/rccf/000010/000007/00/91/23/00001000000700912351.cer"
+                            - numeroSerie: "00001000000500912352"
+                              estado: "Revocado"
+                              tipo: "FIEL"
+                              fechaInicial: "2022-05-04T16:52:10.000Z"
+                              fechaFinal: "2026-04-06T19:05:09.000Z"
+                              serieLink: "https://rdc.sat.gob.mx/rccf/000010/000005/00/91/23/00001000000500912352.cer"
+                          validated_at: "2026-09-28T16:35:18.497Z"
+                          scraped_at: "2026-09-28T16:35:18.497Z"
+                          screenshot_at: "2026-09-28 16:35:27"
+                          screenshot_url: "https://files.gotrebol.com/mx/sat/screenshots/900202/RUTD800515AB2/demo.jpg"
                     tag: null
                     item_scope: "advanced"
                     tags: {}
