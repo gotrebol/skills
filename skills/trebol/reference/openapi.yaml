@@ -3188,7 +3188,8 @@ paths:
       summary: Listar tipos de ítem personalizados
       description: |
         Devuelve los tipos no eliminados de la cuenta (activos y archivados) con sus procesos.
-        Ordenados por fecha de creación descendente. Tamaño de página fijo: 10.
+        Ordenados por fecha de creación descendente. Tamaño de página por defecto: 10,
+        ajustable con `limit` hasta un máximo de 100.
         Las respuestas GET incluyen `user_input` y `json_schema` en cada proceso.
       security:
         - ApiKeyAuth: []
@@ -3198,6 +3199,17 @@ paths:
           schema:
             type: string
           description: Token de cursor para obtener la siguiente página.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: |
+            Cantidad de tipos por página. Los valores mayores a 100 se ajustan a 100
+            (no producen error). Útil para recuperar todos los tipos en menos llamadas.
       responses:
         "200":
           description: Lista de tipos de ítem personalizados obtenida exitosamente.
@@ -3206,7 +3218,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/CustomItemTypeReadListResponse"
         "400":
-          description: Token de cursor inválido.
+          description: "Token de cursor inválido, o `limit` no es un entero positivo."
         "401":
           description: No autorizado. API key inválida o faltante.
 
