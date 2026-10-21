@@ -3180,14 +3180,16 @@ paths:
         "401":
           description: No autorizado. API key inválida o faltante.
         "409":
-          description: "Conflicto: `name` ya existe en la cuenta (entre tipos activos y archivados)."
+          description: "Conflicto: `name` ya existe en la cuenta o está reservado por un tipo global (activo o archivado)."
     get:
       operationId: listarTiposItemPersonalizados
       tags:
         - Tipos de Ítem Personalizados
       summary: Listar tipos de ítem personalizados
       description: |
-        Devuelve los tipos no eliminados de la cuenta (activos y archivados) con sus procesos.
+        Devuelve los tipos no eliminados de la cuenta (activos y archivados) y los tipos globales activos, con sus procesos.
+        Los tipos globales incluyen `is_global: true` y son de solo lectura para tu cuenta.
+        Consulta el [catálogo de ítems globales](/guia-devs/uso-kyb/todos-paises/items-globales).
         Ordenados por fecha de creación descendente. Tamaño de página por defecto: 10,
         ajustable con `limit` hasta un máximo de 100.
         Las respuestas GET incluyen `user_input` y `json_schema` en cada proceso.
@@ -3230,7 +3232,9 @@ paths:
       summary: Obtener un tipo de ítem personalizado
       description: |
         Devuelve un tipo con todos sus procesos. Misma estructura que un elemento individual del listado.
-        Los tipos archivados se devuelven normalmente; solo los eliminados (DELETE) producen 404.
+        Incluye tipos de tu cuenta (activos y archivados) y tipos globales activos, identificados con `is_global: true`.
+        Los tipos globales son de solo lectura. Los globales archivados, los eliminados y los tipos de otras cuentas producen 404.
+        Consulta el [catálogo de ítems globales](/guia-devs/uso-kyb/todos-paises/items-globales).
       security:
         - ApiKeyAuth: []
       parameters:
@@ -3245,13 +3249,14 @@ paths:
         "401":
           description: No autorizado. API key inválida o faltante.
         "404":
-          description: Tipo no encontrado o eliminado.
+          description: Tipo no encontrado, eliminado, global archivado o perteneciente a otra cuenta.
     patch:
       operationId: actualizarTipoItemPersonalizado
       tags:
         - Tipos de Ítem Personalizados
       summary: Actualizar un tipo de ítem personalizado
       description: |
+        Los tipos globales son de solo lectura; intentar actualizarlos devuelve 403.
         Actualiza campos del tipo. Debes enviar al menos un campo.
         Si todos los campos ya coinciden con los valores actuales, no se ejecuta ningún UPDATE y `updated_at` no cambia (idempotencia).
       security:
@@ -3279,16 +3284,19 @@ paths:
             - `friendly_name` fuera del rango de 2 a 255 caracteres.
         "401":
           description: No autorizado. API key inválida o faltante.
+        "403":
+          description: Los tipos globales y sus procesos son de solo lectura para tu cuenta.
         "404":
           description: Tipo no encontrado (los tipos archivados sí se pueden actualizar).
         "409":
-          description: "`name` colisiona con otro tipo activo o archivado de la cuenta."
+          description: "`name` colisiona con otro tipo de la cuenta o está reservado por un tipo global (activo o archivado)."
     delete:
       operationId: eliminarTipoItemPersonalizado
       tags:
         - Tipos de Ítem Personalizados
       summary: Eliminar un tipo de ítem personalizado
       description: |
+        Los tipos globales son de solo lectura; intentar eliminarlos devuelve 403.
         Elimina el tipo de forma permanente junto con todos sus procesos. Es irreversible.
         Para pausar un tipo sin borrarlo (y poder reactivarlo después), usa PATCH con `status: "archived"` en lugar de DELETE.
       security:
@@ -3314,6 +3322,8 @@ paths:
                         example: "cit_abc123"
         "401":
           description: No autorizado. API key inválida o faltante.
+        "403":
+          description: Los tipos globales y sus procesos son de solo lectura para tu cuenta.
         "404":
           description: Tipo no encontrado o ya eliminado.
 
@@ -3324,6 +3334,7 @@ paths:
         - Tipos de Ítem Personalizados
       summary: Agregar un proceso a un tipo de ítem personalizado
       description: |
+        Los tipos globales son de solo lectura; intentar agregarles procesos devuelve 403.
         Agrega un proceso de validación o extracción a un tipo existente. Hasta 5 procesos de extracción y 20 de validación por tipo.
         En procesos de extracción sin `json_schema`, `auto_improve` debe enviarse como `true`; enviarlo como `false` devuelve 400.
         Si se envía `json_schema`, `auto_improve` se establece en `false` automáticamente; enviarlo como `true` devuelve 400.
@@ -3396,6 +3407,8 @@ paths:
             - `failure_policy` enviado en un proceso que no es de validación.
         "401":
           description: No autorizado. API key inválida o faltante.
+        "403":
+          description: Los tipos globales y sus procesos son de solo lectura para tu cuenta.
         "404":
           description: Tipo padre no encontrado o eliminado.
         "409":
@@ -3413,8 +3426,9 @@ paths:
       summary: Obtener un proceso de un tipo de ítem personalizado
       description: |
         Devuelve un proceso con su versión activa, incluyendo `user_input` y `json_schema`.
-        Para que el GET responda correctamente: el tipo padre debe existir (no eliminado ni archivado),
-        el proceso debe existir (no eliminado), y la versión activa debe tener `user_input` no nulo.
+        Puedes consultar procesos de tipos de tu cuenta (activos o archivados) y de tipos globales activos.
+        El tipo padre y el proceso deben existir y no estar eliminados. La versión activa debe existir y tener `user_input` no nulo.
+        Los tipos globales archivados producen 404.
       security:
         - ApiKeyAuth: []
       parameters:
@@ -3430,13 +3444,14 @@ paths:
         "401":
           description: No autorizado. API key inválida o faltante.
         "404":
-          description: Tipo padre no encontrado, proceso no encontrado, o versión activa inválida.
+          description: Tipo padre no encontrado, eliminado o global archivado; proceso no encontrado; o versión activa inválida.
     patch:
       operationId: actualizarProcesoTipoItemPersonalizado
       tags:
         - Tipos de Ítem Personalizados
       summary: Actualizar un proceso de un tipo de ítem personalizado
       description: |
+        Los procesos de tipos globales son de solo lectura; intentar actualizarlos devuelve 403.
         Actualiza un proceso. Debes enviar al menos un campo. `process_type` y `id` no se pueden cambiar.
         Cuando el PATCH modifica `user_input`, se crea una nueva versión del proceso que pasa a ser la activa.
       security:
@@ -3475,6 +3490,8 @@ paths:
             - `auto_improve: true` enviado junto con `json_schema`.
         "401":
           description: No autorizado. API key inválida o faltante.
+        "403":
+          description: Los tipos globales y sus procesos son de solo lectura para tu cuenta.
         "404":
           description: Tipo padre o proceso no encontrado.
         "409":
@@ -3489,6 +3506,7 @@ paths:
         - Tipos de Ítem Personalizados
       summary: Eliminar un proceso de un tipo de ítem personalizado
       description: |
+        Los procesos de tipos globales son de solo lectura; intentar eliminarlos devuelve 403.
         Elimina permanentemente un proceso de validación o extracción. El proceso de clasificación no se puede eliminar; intentarlo devuelve 409. Para modificar sus instrucciones, usa PATCH sobre el proceso.
       security:
         - ApiKeyAuth: []
@@ -3514,6 +3532,8 @@ paths:
                         example: "ccp_ghi789"
         "401":
           description: No autorizado. API key inválida o faltante.
+        "403":
+          description: Los tipos globales y sus procesos son de solo lectura para tu cuenta.
         "404":
           description: Tipo padre no encontrado, o proceso no encontrado / ya eliminado.
         "409":
@@ -8268,6 +8288,11 @@ components:
           enum: ["active", "archived"]
           description: Estado del tipo.
           example: "active"
+        is_global:
+          type: boolean
+          readOnly: true
+          description: Indica si Trébol comparte este tipo con todas las cuentas. Los tipos globales y sus procesos son de solo lectura.
+          example: false
         created_at:
           type: string
           format: date-time
@@ -8321,6 +8346,11 @@ components:
             status:
               type: string
               enum: ["active", "archived"]
+            is_global:
+              type: boolean
+              readOnly: true
+              description: Indica si Trébol comparte este tipo con todas las cuentas. Los tipos globales y sus procesos son de solo lectura.
+              example: false
             created_at:
               type: string
               format: date-time

@@ -4,6 +4,12 @@ Historial de cambios al skill de Trébol distribuido vía [skills.sh](https://ww
 
 Los integradores pueden preguntarle a su asistente con IA *"¿qué cambió en la última versión del skill de Trébol?"* y recibir un resumen consultando este archivo.
 
+## 2026-10-13
+
+- **Estructura accionaria de holdings**: [guía de `cit_holding_shareholder_structure`](https://docs.gotrebol.com/guia-devs/uso-kyb/todos-paises/estructura-accionaria-holding), hoy el único tipo global. Documenta el `process_reference` de extracción (`extraer estructura accionaria`), los campos observados del grafo de empresas y accionistas, y un ejemplo con datos ficticios. La extracción del documento y la actualización automática del ítem `ubos` tienen requisitos separados.
+- **Ítems globales de Trébol**: nueva [guía de consulta y uso](https://docs.gotrebol.com/guia-devs/uso-kyb/todos-paises/items-globales) de los tipos compartidos. `GET /v2/custom-item-types` incluye los tipos globales activos; `is_global: true` los identifica. Son de solo lectura: modificar el tipo o sus procesos devuelve 403. OpenAPI y su referencia del skill quedan sincronizados.
+- **Uso por API**: la clasificación automática de un ítem `generic`, sin `client_item_type`, puede seleccionar un tipo global. La guía documenta esta ruta; la consulta del catálogo no habilita el envío directo de un `cit_*` global.
+
 ## 2026-10-06
 
 - **Dos RFC de prueba nuevos**: además de A, B y C, dos escenarios que reproducen un solo flujo. Siguen sin consultar fuentes externas y sin cobro. Impacto en integraciones:
