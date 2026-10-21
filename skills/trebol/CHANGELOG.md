@@ -4,6 +4,13 @@ Historial de cambios al skill de Trébol distribuido vía [skills.sh](https://ww
 
 Los integradores pueden preguntarle a su asistente con IA *"¿qué cambió en la última versión del skill de Trébol?"* y recibir un resumen consultando este archivo.
 
+## 2026-10-20
+
+- **`verification_item.v2.completed` de ítems `siger` trae `siger_documents`**: dice cómo terminó el paso de documentos. Hasta ahora un ítem `siger` podía completarse con PDFs de actas faltantes sin ninguna señal. Impacto en integraciones:
+  - `outcome`: `complete`, `partial` (con `failed_acts`), `failed` (con `reason`) o `not_found` (la empresa no está en SIGER; no es un error).
+  - Trae también `downloaded_count` y `failed_count`.
+  - No hay evento nuevo ni hace falta cambiar la suscripción: llega en el `verification_item.v2.completed` de siempre. Los demás `item_type` no cambian.
+
 ## 2026-10-13
 
 - **Estructura accionaria de holdings**: [guía de `cit_holding_shareholder_structure`](https://docs.gotrebol.com/guia-devs/uso-kyb/todos-paises/estructura-accionaria-holding), hoy el único tipo global. Documenta el `process_reference` de extracción (`extraer estructura accionaria`), los campos observados del grafo de empresas y accionistas, y un ejemplo con datos ficticios. La extracción del documento y la actualización automática del ítem `ubos` tienen requisitos separados.

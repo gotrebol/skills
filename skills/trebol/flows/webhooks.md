@@ -68,6 +68,10 @@ Un item específico completó su procesamiento. Contiene `item_error` si hubo pr
 
 Trata `item_error` como un `string` opaco: pueden llegar otros códigos específicos por `item_type` (por ejemplo `prevalidation_failed` en `csf_mx`).
 
+Si `item_type` es `siger`, también trae `siger_documents`, con cómo terminó el paso de documentos (un ítem `siger` puede completarse con PDFs de actas faltantes):
+- `outcome`: `complete` (todos los PDFs, o no había para bajar), `partial` (faltan algunos, en `failed_acts`: `act_id`, `act`, `registration_date`), `failed` (error técnico; motivo en `reason`, p. ej. `all_downloads_failed`) o `not_found` (la empresa no está en SIGER; resultado definitivo, no un error).
+- `downloaded_count` y `failed_count`: actas con PDF bajadas y sin PDF.
+
 ### `verification_item.v2.internal_status_changed`
 Cambio de estado interno de un item.
 
